@@ -1,0 +1,16 @@
+[Inputs]
+wreg_i
+resetn
+=aluop_i[7:0]=
+=alusel[2:0]=
+=reg1[31:0]=
+=reg2[31:0]=
+=wd_i[4:0]=
+[Outputs]
+wreg_o
+=wdata_o[31:0]=
+=wd_o[4:0]=
+[BiDir]
+[ATTRIBUTES]
+VeriModel EXE
+

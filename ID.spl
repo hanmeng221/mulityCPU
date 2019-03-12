@@ -1,0 +1,19 @@
+[Inputs]
+resetn
+=pc_i[31:0]=
+=inst_i[31:0]=
+=reg1_data[31:0]=
+=reg2_data[31:0]=
+[Outputs]
+wreg_o
+=aluop_o[7:0]=
+=alusel_o[2:0]=
+=reg1_o[31:0]=
+=reg2_o[31:0]=
+=wd_o[4:0]=
+=reg1_read_o[4:0]=
+=reg2_read_o[4:0]=
+[BiDir]
+[ATTRIBUTES]
+VeriModel ID
+

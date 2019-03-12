@@ -1,0 +1,20 @@
+[Inputs]
+id_wreg
+clk
+resetn
+=id_aluop[7:0]=
+=id_alusel[2:0]=
+=id_reg1_i[31:0]=
+=id_reg2_i[31:0]=
+=id_wd_i[4:0]=
+[Outputs]
+ex_wreg
+=ex_aluop[7:0]=
+=ex_alusel[2:0]=
+=ex_reg1_o[31:0]=
+=ex_reg2_o[31:0]=
+=ex_wd_i[4:0]=
+[BiDir]
+[ATTRIBUTES]
+VeriModel ID_EX
+
