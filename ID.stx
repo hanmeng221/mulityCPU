@@ -5,14 +5,14 @@ Parameter TMPDIR set to /home/ise/openMIPS/xst/projnav.tmp
 
 
 Total REAL time to Xst completion: 0.00 secs
-Total CPU time to Xst completion: 0.04 secs
+Total CPU time to Xst completion: 0.05 secs
  
 --> 
 Parameter xsthdpdir set to /home/ise/openMIPS/xst
 
 
 Total REAL time to Xst completion: 0.00 secs
-Total CPU time to Xst completion: 0.04 secs
+Total CPU time to Xst completion: 0.05 secs
  
 --> 
 Reading design: ID.prj
@@ -43,16 +43,17 @@ TABLE OF CONTENTS
 *                          HDL Parsing                                  *
 =========================================================================
 Analyzing Verilog file "/home/ise/openMIPS/ID.v" into library work
+Parsing verilog file "define.v" included at line 21.
 Parsing module <ID>.
 
 
 Total REAL time to Xst completion: 9.00 secs
-Total CPU time to Xst completion: 8.57 secs
+Total CPU time to Xst completion: 9.32 secs
  
 --> 
 
 
-Total memory usage is 297632 kilobytes
+Total memory usage is 297888 kilobytes
 
 Number of errors   :    0 (   0 filtered)
 Number of warnings :    0 (   0 filtered)

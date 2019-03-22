@@ -18,13 +18,8 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-`define RstEnable   		1'b1
-`define RstDisable  		1'b0
-`define ZeroWord			32'h00000000
-`define EXE_NOP_OP			8'b00000000
-`define EXE_RES_NOP			3'b000
-`define NOPRegAddr			5'b00000
-`define WriteDisable		1'b0
+`include "define.v"
+
 module ID_EX(
     input wire [7:0] id_aluop,
     input wire[2:0] id_alusel,
@@ -34,12 +29,22 @@ module ID_EX(
     input wire id_wreg,
     input wire clk,
     input wire resetn,
+	input wire [5:0] stall,
+	input wire id_is_in_delayslot,
+	input wire [31:0] id_link_address,
+	input wire next_inst_in_delayslot_i,
+	input wire [31:0] id_inst,
+	
     output reg [7:0] ex_aluop,
     output reg [2:0] ex_alusel,
     output reg [31:0] ex_reg1_o,
     output reg [31:0] ex_reg2_o,
     output reg [4:0] ex_wd_o,
-    output reg ex_wreg
+    output reg ex_wreg,
+	output reg ex_is_in_delayslot,
+	output reg [31:0] ex_link_address,
+	output reg is_in_delayslot_o,
+	output reg [31:0] ex_inst
     );
 	
 	always@(posedge clk) begin
@@ -50,13 +55,33 @@ module ID_EX(
 			ex_reg2_o	<= `ZeroWord;
 			ex_wd_o		<= `NOPRegAddr;
 			ex_wreg		<= `WriteDisable;
-		end else begin
+			ex_link_address	<= `ZeroWord;
+			ex_is_in_delayslot <= `NotInDelaySlot;
+			is_in_delayslot_o  <= `NotInDelaySlot;
+			ex_inst		<= `ZeroWord;
+			
+		end else if (stall[2] == `Stop && stall[3] == `NoStop) begin
+			ex_aluop 	<= `EXE_NOP_OP;
+			ex_alusel	<= `EXE_RES_NOP;
+			ex_reg1_o	<= `ZeroWord;
+			ex_reg2_o	<= `ZeroWord;
+			ex_wd_o		<= `NOPRegAddr;
+			ex_wreg		<= `WriteDisable;
+			ex_link_address	<= `ZeroWord;
+			ex_is_in_delayslot <= `NotInDelaySlot;
+			ex_inst		<= `ZeroWord;
+			
+		end else if (stall[2] == `NoStop ) begin
 			ex_aluop 	<= id_aluop;
 			ex_alusel	<= id_alusel;
 			ex_reg1_o	<= id_reg1_i;
 			ex_reg2_o	<= id_reg2_i;
 			ex_wd_o		<= id_wd_i;
 			ex_wreg		<= id_wreg;
+			ex_link_address <= id_link_address;
+			ex_is_in_delayslot <= id_is_in_delayslot;
+			is_in_delayslot_o <= next_inst_in_delayslot_i;
+			ex_inst		<= id_inst;
 		end
 	end
 	

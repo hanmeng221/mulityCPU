@@ -1,9 +1,6 @@
-set -tmpdir "xst/projnav.tmp"
-set -xsthdpdir "xst"
-run
--ifn CPU.prj
--ofn CPU
--ofmt NGC
+set -tmpdir "/home/ise/openMIPS/xst/projnav.tmp"
+set -xsthdpdir "/home/ise/openMIPS/xst"
+run -compileonly yes
 -p xa6slx100-2-fgg484
 -top CPU
 -opt_mode Speed
@@ -50,3 +47,4 @@ run
 -iob Auto
 -equivalent_register_removal YES
 -slice_utilization_ratio_maxmargin 5
+-ifn CPU.prj

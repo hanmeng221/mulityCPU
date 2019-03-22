@@ -1,7 +1,7 @@
 Release 14.7 par P.20160913 (lin64)
 Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
 
-localhost.localdomain::  Mon Mar 11 14:58:05 2019
+localhost.localdomain::  Sun Mar 17 09:03:12 2019
 
 par -w -intstyle ise -ol high -mt off CPU_map.ncd CPU.ncd CPU.pcf 
 
@@ -32,30 +32,30 @@ Device speed data version:  "PRODUCTION 1.23 2016-11-22".
 Device Utilization Summary:
 
 Slice Logic Utilization:
-  Number of Slice Registers:                   166 out of 126,576    1%
-    Number used as Flip Flops:                 135
-    Number used as Latches:                     31
+  Number of Slice Registers:                 1,064 out of 126,576    1%
+    Number used as Flip Flops:                 968
+    Number used as Latches:                     96
     Number used as Latch-thrus:                  0
     Number used as AND/OR logics:                0
-  Number of Slice LUTs:                        158 out of  63,288    1%
-    Number used as logic:                      157 out of  63,288    1%
-      Number using O6 output only:              95
-      Number using O5 output only:              28
-      Number using O5 and O6:                   34
+  Number of Slice LUTs:                      1,958 out of  63,288    3%
+    Number used as logic:                    1,932 out of  63,288    3%
+      Number using O6 output only:           1,297
+      Number using O5 output only:              86
+      Number using O5 and O6:                  549
       Number used as ROM:                        0
     Number used as Memory:                       0 out of  15,616    0%
-    Number used exclusively as route-thrus:      1
-      Number with same-slice register load:      0
-      Number with same-slice carry load:         1
+    Number used exclusively as route-thrus:     26
+      Number with same-slice register load:      5
+      Number with same-slice carry load:        21
       Number with other load:                    0
 
 Slice Logic Distribution:
-  Number of occupied Slices:                    58 out of  15,822    1%
-  Number of MUXCYs used:                        32 out of  31,644    1%
-  Number of LUT Flip Flop pairs used:          187
-    Number with an unused Flip Flop:            32 out of     187   17%
-    Number with an unused LUT:                  29 out of     187   15%
-    Number of fully used LUT-FF pairs:         126 out of     187   67%
+  Number of occupied Slices:                   698 out of  15,822    4%
+  Number of MUXCYs used:                       316 out of  31,644    1%
+  Number of LUT Flip Flop pairs used:        2,070
+    Number with an unused Flip Flop:         1,284 out of   2,070   62%
+    Number with an unused LUT:                 112 out of   2,070    5%
+    Number of fully used LUT-FF pairs:         674 out of   2,070   32%
     Number of slice register sites lost
       to control set restrictions:               0 out of 126,576    0%
 
@@ -67,27 +67,24 @@ Slice Logic Distribution:
 
 IO Utilization:
   Number of bonded IOBs:                        98 out of     326   30%
-    IOB Latches:                                17
 
 Specific Feature Utilization:
   Number of RAMB16BWERs:                         0 out of     268    0%
   Number of RAMB8BWERs:                          0 out of     536    0%
   Number of BUFIO2/BUFIO2_2CLKs:                 0 out of      32    0%
   Number of BUFIO2FB/BUFIO2FB_2CLKs:             0 out of      32    0%
-  Number of BUFG/BUFGMUXs:                       1 out of      16    6%
-    Number used as BUFGs:                        1
+  Number of BUFG/BUFGMUXs:                       2 out of      16   12%
+    Number used as BUFGs:                        2
     Number used as BUFGMUX:                      0
   Number of DCM/DCM_CLKGENs:                     0 out of      12    0%
   Number of ILOGIC2/ISERDES2s:                   0 out of     506    0%
   Number of IODELAY2/IODRP2/IODRP2_MCBs:         0 out of     506    0%
-  Number of OLOGIC2/OSERDES2s:                  17 out of     506    3%
-    Number used as OLOGIC2s:                    17
-    Number used as OSERDES2s:                    0
+  Number of OLOGIC2/OSERDES2s:                   0 out of     506    0%
   Number of BSCANs:                              0 out of       4    0%
   Number of BUFHs:                               0 out of     384    0%
   Number of BUFPLLs:                             0 out of       8    0%
   Number of BUFPLL_MCBs:                         0 out of       4    0%
-  Number of DSP48A1s:                            0 out of     180    0%
+  Number of DSP48A1s:                            4 out of     180    2%
   Number of ICAPs:                               0 out of       1    0%
   Number of MCBs:                                0 out of       4    0%
   Number of PCILOGICSEs:                         0 out of       2    0%
@@ -100,35 +97,35 @@ Specific Feature Utilization:
 Overall effort level (-ol):   High 
 Router effort level (-rl):    High 
 
-Starting initial Timing Analysis.  REAL time: 18 secs 
-Finished initial Timing Analysis.  REAL time: 18 secs 
+Starting initial Timing Analysis.  REAL time: 23 secs 
+Finished initial Timing Analysis.  REAL time: 23 secs 
 
 Starting Router
 
 
-Phase  1  : 1001 unrouted;      REAL time: 24 secs 
+Phase  1  : 11449 unrouted;      REAL time: 29 secs 
 
-Phase  2  : 882 unrouted;      REAL time: 29 secs 
+Phase  2  : 10213 unrouted;      REAL time: 37 secs 
 
-Phase  3  : 296 unrouted;      REAL time: 30 secs 
+Phase  3  : 4867 unrouted;      REAL time: 55 secs 
 
-Phase  4  : 296 unrouted; (Par is working to improve performance)     REAL time: 36 secs 
+Phase  4  : 4867 unrouted; (Par is working to improve performance)     REAL time: 1 mins 3 secs 
 
 Updating file: CPU.ncd with current fully routed design.
 
-Phase  5  : 0 unrouted; (Par is working to improve performance)     REAL time: 38 secs 
+Phase  5  : 0 unrouted; (Par is working to improve performance)     REAL time: 1 mins 21 secs 
 
-Phase  6  : 0 unrouted; (Par is working to improve performance)     REAL time: 38 secs 
+Phase  6  : 0 unrouted; (Par is working to improve performance)     REAL time: 1 mins 21 secs 
 
-Phase  7  : 0 unrouted; (Par is working to improve performance)     REAL time: 38 secs 
+Phase  7  : 0 unrouted; (Par is working to improve performance)     REAL time: 1 mins 21 secs 
 
-Phase  8  : 0 unrouted; (Par is working to improve performance)     REAL time: 38 secs 
+Phase  8  : 0 unrouted; (Par is working to improve performance)     REAL time: 1 mins 21 secs 
 
-Phase  9  : 0 unrouted; (Par is working to improve performance)     REAL time: 38 secs 
+Phase  9  : 0 unrouted; (Par is working to improve performance)     REAL time: 1 mins 22 secs 
 
-Phase 10  : 0 unrouted; (Par is working to improve performance)     REAL time: 38 secs 
-Total REAL time to Router completion: 38 secs 
-Total CPU time to Router completion: 37 secs 
+Phase 10  : 0 unrouted; (Par is working to improve performance)     REAL time: 1 mins 25 secs 
+Total REAL time to Router completion: 1 mins 25 secs 
+Total CPU time to Router completion: 1 mins 23 secs 
 
 Partition Implementation Status
 -------------------------------
@@ -148,8 +145,8 @@ Asterisk (*) preceding a constraint indicates it was not met.
   Constraint                                |    Check    | Worst Case |  Best Case | Timing |   Timing   
                                             |             |    Slack   | Achievable | Errors |    Score   
 ----------------------------------------------------------------------------------------------------------
-  Autotimespec constraint for clock net clk | SETUP       |         N/A|     4.056ns|     N/A|           0
-  _BUFGP                                    | HOLD        |     0.415ns|            |       0|           0
+  Autotimespec constraint for clock net clk | SETUP       |         N/A|    23.691ns|     N/A|           0
+  _BUFGP                                    | HOLD        |     0.439ns|            |       0|           0
 ----------------------------------------------------------------------------------------------------------
 
 
@@ -165,10 +162,10 @@ Generating Pad Report.
 
 All signals are completely routed.
 
-Total REAL time to PAR completion: 39 secs 
-Total CPU time to PAR completion: 38 secs 
+Total REAL time to PAR completion: 1 mins 29 secs 
+Total CPU time to PAR completion: 1 mins 26 secs 
 
-Peak Memory Usage:  822 MB
+Peak Memory Usage:  861 MB
 
 Placer: Placement generated during map.
 Routing: Completed - No errors found.

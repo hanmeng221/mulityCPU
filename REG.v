@@ -18,10 +18,8 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-`define RstEnable   		1'b1
-`define RstDisable  		1'b0
-`define ZeroWord 			32'h00000000
-`define WriteEnable		1'b1
+`include "define.v"
+
 module REG(
     input wire [4:0] raddr1,
     input wire [4:0] raddr2,
@@ -35,7 +33,41 @@ module REG(
     );
 
 	reg[31:0] regs[0:31];
-	
+	initial begin
+			regs[0] <= 32'b0;
+			regs[1] <= 32'b0;
+			regs[2] <= 32'b0;
+			regs[3] <= 32'b0;
+			regs[4] <= 32'b0;
+			regs[5] <= 32'b0;
+			regs[6] <= 32'b0;
+			regs[7] <= 32'b0;
+			regs[8] <= 32'b0;
+			regs[9] <= 32'b0;
+			regs[10]<= 32'b0;
+			regs[11] <= 32'b0;
+			regs[12] <= 32'b0;
+			regs[13] <= 32'b0;
+			regs[14] <= 32'b0;
+			regs[15] <= 32'b0;
+			regs[16] <= 32'b0;
+			regs[17] <= 32'b0;
+			regs[18] <= 32'b0;
+			regs[19] <= 32'b0;
+			regs[20] <= 32'b0;
+			regs[21] <= 32'b0;
+			regs[22] <= 32'b0;
+			regs[23] <= 32'b0;
+			regs[24] <= 32'b0;
+			regs[25] <= 32'b0;
+			regs[26] <= 32'b0;
+			regs[27] <= 32'b0;
+			regs[28] <= 32'b0;
+			regs[29] <= 32'b0;
+			regs[30] <= 32'b0;
+			regs[31] <= 32'b0;
+		end
+		
 	always@(posedge clk)begin
 		if(resetn == `RstDisable) begin
 			if((wreg == `WriteEnable) && (waddr != 5'h0))begin
@@ -84,7 +116,7 @@ module REG(
 			rdata1 <= `ZeroWord;
 		end else if ((raddr1 == waddr) && (wreg == `WriteEnable)) begin
 			rdata1 <= wdata;
-		end begin
+		end else begin
 			rdata1 <= regs[raddr1];
 		end
 	end
@@ -96,7 +128,7 @@ module REG(
 			rdata2 <= `ZeroWord;
 		end else if ((raddr2 == waddr) && (wreg == `WriteEnable)) begin
 			rdata2 <= wdata;
-		end begin
+		end else begin
 			rdata2 <= regs[raddr2];
 		end
 	end

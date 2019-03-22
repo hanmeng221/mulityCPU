@@ -18,23 +18,25 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-`define RstEnable   		1'b1
-`define RstDisable  		1'b0
-`define ZeroWord			32'h00000000
-`define NOPRegAddr			5'b00000
-`define WriteEnable			1'b1
-`define WriteDisable		1'b0	
+`include "define.v"
 
 
 module MEM_WB(
     input wire [31:0] mem_wdata,
     input wire [4:0] mem_wd,
     input wire mem_wreg,
+	input wire mem_whilo,
+	input wire [31:0] mem_hi,
+	input wire [31:0] mem_lo,
     input wire clk,
     input wire resetn,
+	input wire [5:0] stall,
     output reg [31:0] wb_wdata,
     output reg [4:0] wb_wd,
-    output reg wb_wreg
+    output reg wb_wreg,
+	output reg wb_whilo,
+	output reg [31:0] wb_hi,
+	output reg [31:0] wb_lo
     );
 
 	always@(posedge clk) begin
@@ -42,10 +44,23 @@ module MEM_WB(
 			wb_wd		<= `NOPRegAddr;
 			wb_wdata	<= `ZeroWord;
 			wb_wreg		<= `WriteDisable;
-		end else begin
+			wb_whilo	<= `WriteDisable;
+			wb_hi		<= `ZeroWord;
+			wb_lo		<= `ZeroWord;
+		end else if (stall[4] == `Stop && stall[5] == `NoStop ) begin
+			wb_wd		<= `NOPRegAddr;
+			wb_wdata	<= `ZeroWord;
+			wb_wreg		<= `WriteDisable;
+			wb_whilo	<= `WriteDisable;
+			wb_hi		<= `ZeroWord;
+			wb_lo		<= `ZeroWord;
+		end else if (stall[4] == `NoStop) begin
 			wb_wd		<=	mem_wd;
 			wb_wdata	<= 	mem_wdata;
 			wb_wreg		<= 	mem_wreg;
+			wb_whilo	<=  mem_whilo;
+			wb_hi		<= 	mem_hi;
+			wb_lo		<=  mem_lo;
 		end
 	end
 	

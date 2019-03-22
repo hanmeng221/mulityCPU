@@ -5,14 +5,14 @@ Parameter TMPDIR set to /home/ise/openMIPS/xst/projnav.tmp
 
 
 Total REAL time to Xst completion: 0.00 secs
-Total CPU time to Xst completion: 0.06 secs
+Total CPU time to Xst completion: 0.04 secs
  
 --> 
 Parameter xsthdpdir set to /home/ise/openMIPS/xst
 
 
 Total REAL time to Xst completion: 0.00 secs
-Total CPU time to Xst completion: 0.06 secs
+Total CPU time to Xst completion: 0.04 secs
  
 --> 
 Reading design: MEM_WB.prj
@@ -46,13 +46,13 @@ Analyzing Verilog file "/home/ise/openMIPS/MEM_WB.v" into library work
 Parsing module <MEM_WB>.
 
 
-Total REAL time to Xst completion: 11.00 secs
-Total CPU time to Xst completion: 10.65 secs
+Total REAL time to Xst completion: 9.00 secs
+Total CPU time to Xst completion: 8.85 secs
  
 --> 
 
 
-Total memory usage is 394292 kilobytes
+Total memory usage is 297420 kilobytes
 
 Number of errors   :    0 (   0 filtered)
 Number of warnings :    0 (   0 filtered)

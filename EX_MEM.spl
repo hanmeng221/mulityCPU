@@ -1,13 +1,19 @@
 [Inputs]
 ex_wreg
+ex_whilo
 clk
 resetn
 =ex_wdata[31:0]=
 =ex_wd[4:0]=
+=ex_hi[31:0]=
+=ex_lo[31:0]=
 [Outputs]
 mem_wreg
+mem_whilo
 =mem_wdata[31:0]=
 =mem_wd[4:0]=
+=mem_hi[31:0]=
+=mem_lo[31:0]=
 [BiDir]
 [ATTRIBUTES]
 VeriModel EX_MEM

@@ -56,7 +56,7 @@ module cpu_test;
 	end
 	
 	initial begin
-		forever #50 clk = ~clk;
+		forever #25 clk = ~clk;
 	end
       
 endmodule

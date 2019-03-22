@@ -43,16 +43,17 @@ TABLE OF CONTENTS
 *                          HDL Parsing                                  *
 =========================================================================
 Analyzing Verilog file "/home/ise/openMIPS/PC.v" into library work
+Parsing verilog file "define.v" included at line 21.
 Parsing module <PC>.
 
 
 Total REAL time to Xst completion: 10.00 secs
-Total CPU time to Xst completion: 9.75 secs
+Total CPU time to Xst completion: 9.12 secs
  
 --> 
 
 
-Total memory usage is 394288 kilobytes
+Total memory usage is 297708 kilobytes
 
 Number of errors   :    0 (   0 filtered)
 Number of warnings :    0 (   0 filtered)

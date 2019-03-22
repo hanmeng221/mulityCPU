@@ -18,22 +18,26 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-`define RstEnable   		1'b1
-`define RstDisable  		1'b0
-`define InstBegin			32'h00000000
-
+`include "define.v"
 
 module PC(
-    input clk,
-    input resetn,
+    input wire clk,
+    input wire resetn,
+	input wire [5:0] stall,
+	input wire [31:0] branch_target_address_i,
+	input wire branch_flag_i,
     output reg [31:0] pc
     );
 	
 	always @(posedge clk) begin
 		if (resetn == `RstEnable) begin
 			pc <= `InstBegin;
-		end else begin
-			pc <= pc + 4'h4;
+		end else if (stall[0] == `NoStop)  begin
+			if(branch_flag_i == `Branch) begin
+				pc <= branch_target_address_i;
+			end else begin 
+				pc <= pc + 4'h4;
+			end
 		end
 	end
 	

@@ -1,13 +1,19 @@
 [Inputs]
 mem_wreg
+mem_whilo
 clk
 resetn
 =mem_wdata[31:0]=
 =mem_wd[4:0]=
+=mem_hi[31:0]=
+=mem_lo[31:0]=
 [Outputs]
 wb_wreg
+wb_whilo
 =wb_wdata[31:0]=
 =wb_wd[4:0]=
+=wb_hi[31:0]=
+=wb_lo[31:0]=
 [BiDir]
 [ATTRIBUTES]
 VeriModel MEM_WB

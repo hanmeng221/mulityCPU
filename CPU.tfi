@@ -1,0 +1,13 @@
+
+
+
+// Instantiate the module
+CPU instance_name (
+    .clk(clk), 
+    .resetn(resetn), 
+    .result(result), 
+    .pc(pc), 
+    .inst(inst)
+    );
+
+

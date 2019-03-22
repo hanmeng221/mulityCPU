@@ -13,4 +13,26 @@ Time resolution is 1 ps
 # run 1000 ns
 Simulator is doing circuit initialization process.
 Finished circuit initialization process.
+# restart
+# run 50ns
+Simulator is doing circuit initialization process.
+Finished circuit initialization process.
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run 50ns
+# run all
+Stopped at time : 102582950 ns : File "/home/ise/openMIPS/PC.v" Line 32
 # exit 0

@@ -18,14 +18,14 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-`define RstEnable   		1'b1
-`define RstDisable  		1'b0
-`define ZeroWord			32'h00000000
+`include  "define.v"
+
 module IF_ID(
     input wire[31:0] if_pc,
     input wire [31:0] if_inst,
     input wire clk,
     input wire resetn,
+	input wire [5:0] stall,
     output reg [31:0] id_pc,
     output reg [31:0] id_inst
     );
@@ -33,7 +33,10 @@ module IF_ID(
 		if (resetn == `RstEnable) begin
 			id_pc <= `ZeroWord;
 			id_inst <= `ZeroWord;
-		end else begin
+		end else if(stall[1] == `Stop && stall[2] == `NoStop )begin
+			id_pc	<= `ZeroWord;
+			id_inst	<= `ZeroWord;
+		end else if (stall[1] == `NoStop) begin
 			id_pc <= if_pc;
 			id_inst <= if_inst;
 		end

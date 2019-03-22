@@ -14,3 +14,5 @@ ngdbuild -intstyle ise -dd _ngo -nt timestamp -i -p xa6slx100-fgg484-2 EXE.ngc E
 map -intstyle ise -p xa6slx100-fgg484-2 -w -logic_opt off -ol high -t 1 -xt 0 -register_duplication off -r 4 -global_opt off -mt off -ir off -pr off -lc off -power off -o EXE_map.ncd EXE.ngd EXE.pcf 
 par -w -intstyle ise -ol high -mt off EXE_map.ncd EXE.ncd EXE.pcf 
 trce -intstyle ise -v 3 -s 2 -n 3 -fastpaths -xml EXE.twx EXE.ncd -o EXE.twr EXE.pcf 
+vhdtdtfi -lib work /home/ise/openMIPS/EXE.v -lang verilog -prj openMIPS -o EXE.spl -module EXE -template /opt/Xilinx/14.7/ISE_DS/ISE//data/splveri.tft -deleteonerror 
+spl2sym -intstyle ise -family aspartan6 -w EXE.spl /home/ise/openMIPS/EXE.sym 

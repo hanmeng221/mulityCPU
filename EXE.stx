@@ -5,14 +5,14 @@ Parameter TMPDIR set to /home/ise/openMIPS/xst/projnav.tmp
 
 
 Total REAL time to Xst completion: 0.00 secs
-Total CPU time to Xst completion: 0.05 secs
+Total CPU time to Xst completion: 0.04 secs
  
 --> 
 Parameter xsthdpdir set to /home/ise/openMIPS/xst
 
 
 Total REAL time to Xst completion: 0.00 secs
-Total CPU time to Xst completion: 0.05 secs
+Total CPU time to Xst completion: 0.04 secs
  
 --> 
 Reading design: EXE.prj
@@ -43,16 +43,17 @@ TABLE OF CONTENTS
 *                          HDL Parsing                                  *
 =========================================================================
 Analyzing Verilog file "/home/ise/openMIPS/EXE.v" into library work
+Parsing verilog file "define.v" included at line 21.
 Parsing module <EXE>.
 
 
-Total REAL time to Xst completion: 10.00 secs
-Total CPU time to Xst completion: 8.97 secs
+Total REAL time to Xst completion: 9.00 secs
+Total CPU time to Xst completion: 9.20 secs
  
 --> 
 
 
-Total memory usage is 297504 kilobytes
+Total memory usage is 297648 kilobytes
 
 Number of errors   :    0 (   0 filtered)
 Number of warnings :    0 (   0 filtered)

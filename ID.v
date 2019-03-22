@@ -18,51 +18,7 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-`define RstEnable   		1'b1
-`define RstDisable  		1'b0
-`define ZeroWord 			32'h00000000
-`define REGEnable			1'b1
-`define REGDisable		1'b0
-`define WriteEnable		1'b1
-`define WriteDisable		1'b0
-
-
-`define NOPRegAddr		5'b00000
-
-`define EXE_SPECIAL_INST 6'b000000
-`define EXE_AND			6'b100100
-`define EXE_OR			6'b100101
-`define EXE_XOR			6'b100110
-`define EXE_NOR			6'b100111
-`define EXE_ANDI		6'b001100
-`define EXE_ORI			6'b001101
-`define EXE_XORI		6'b001110
-`define EXE_LUI			6'b001111
-
-`define EXE_SLL			6'b000000
-`define EXE_SLLV		6'b000100
-`define EXE_SRL			6'b000010
-`define EXE_SRLV		6'b000110
-`define EXE_SRA			6'b000011
-`define EXE_SRAV		6'b000111
-
-`define EXE_SYNC		6'b001111
-`define EXE_PREF		6'b110011
-
-`define EXE_RES_LOGIC	3'b001
-`define EXE_RES_SHIFT	3'b010
-`define EXE_RES_NOP		3'b000
-
-`define EXE_NOP_OP		8'b00000000
-`define EXE_OR_OP		8'b00100101
-`define EXE_AND_OP		8'b00100100
-`define EXE_XOR_OP		8'b00100110
-`define EXE_NOR_OP		8'b00100111
-`define EXE_SLL_OP		8'b01111100
-`define EXE_SRL_OP		8'b00000010
-`define EXE_SRA_OP		8'b00000011
-
-
+`include  "define.v"
 module ID(
     input wire[31:0] pc_i,
     input wire[31:0] inst_i,
@@ -73,10 +29,14 @@ module ID(
 	input wire[31:0] ex_wdata,
 	input wire[4:0] ex_wd,
 	input wire ex_wreg,
-	
+	 
 	input wire[31:0] mem_wdata,
 	input wire[4:0] mem_wd,
 	input wire mem_wreg,
+	
+	input wire is_in_delayslot_i,
+	
+	input wire [7:0]ex_aluop_i,
 	
     output reg [7:0] aluop_o,
     output reg[2:0] alusel_o,
@@ -85,7 +45,15 @@ module ID(
     output reg[4:0] wd_o,
     output reg wreg_o,
     output reg[4:0] reg1_read_o,
-    output reg[4:0] reg2_read_o
+    output reg[4:0] reg2_read_o,
+	output wire stallreq,
+	output reg is_in_delayslot_o,
+	output reg [31:0] link_addr_o,
+	output reg next_inst_in_delayslot_o,
+	output reg [31:0] branch_target_address_o,
+	output reg branch_flag_o,
+	
+	output  [31:0] inst_o
     );
 
 	wire [5:0] op = inst_i[31:26];
@@ -94,215 +62,647 @@ module ID(
 	wire [4:0] op4 = inst_i[20:16];
 	reg [31:0] imm;
 	reg reg1_en,reg2_en;
+	wire [31:0] pc_plus_8;
+	wire [31:0] pc_plus_4;
+	wire [31:0] imm_sll2_signedext;
 	
-	always@(*) begin
-		if (resetn == `RstEnable) begin
-			aluop_o 	<= `EXE_NOP_OP;
-			alusel_o 	<= `EXE_RES_NOP;
-			wd_o 		<= `NOPRegAddr;
-			wreg_o 		<= `WriteDisable;
-			reg1_read_o <=	`NOPRegAddr;
-			reg2_read_o <=	`NOPRegAddr;
-			reg1_en 	<= `REGDisable;
-			reg2_en 	<= `REGDisable;
-			imm 		<= `ZeroWord;
-		end else begin
-			case (op)
-				`EXE_SPECIAL_INST: begin
-					case (op2) 
-						5'b00000:	begin
-							case (op3)
-								`EXE_OR: begin
-									wreg_o 	<= 	`WriteEnable;
-									wd_o	<=  inst_i[15:11];
-									aluop_o <=	`EXE_OR_OP;
-									alusel_o<= 	`EXE_RES_LOGIC;
-									reg1_en <=	`REGEnable;
-									reg2_en <= 	`REGEnable;
-									reg1_read_o <=	inst_i[25:21];
-									reg2_read_o <=	inst_i[20:16];
+	assign pc_plus_8 = pc_i + 8;
+	assign pc_plus_4 = pc_i + 4;
+	assign imm_sll2_signedext  = {{14{inst_i[15]}},inst_i[15:0],2'b00};
+	
+	
+	
+	assign inst_o = inst_i;
+	
+	reg 	stallreq_for_reg1_loadrelate ;
+	reg 	stallreq_for_reg2_loadrelate;
+	wire pre_inst_is_load;
+	
+	assign pre_inst_is_load = ((ex_aluop_i == `EXE_LW_OP) ||(ex_aluop_i == `EXE_SW_OP))? 1'b1:1'b0;
+	
+	
+always@(*) begin
+	if (resetn == `RstEnable) begin
+		aluop_o 	<= `EXE_NOP_OP;
+		alusel_o 	<= `EXE_RES_NOP;
+		wd_o 		<= `NOPRegAddr;
+		wreg_o 		<= `WriteDisable;
+		reg1_read_o <=	`NOPRegAddr;
+		reg2_read_o <=	`NOPRegAddr;
+		reg1_en 	<= `REGDisable;
+		reg2_en 	<= `REGDisable;
+		imm 		<= `ZeroWord;
+		link_addr_o	<= `ZeroWord;
+		branch_target_address_o	<= `ZeroWord;
+		branch_flag_o	<= `NotBranch;
+		next_inst_in_delayslot_o <= `NotInDelaySlot;
+		
+	end else begin
+		aluop_o <= `EXE_NOP_OP;
+		alusel_o<= `EXE_RES_NOP;
+		wd_o	<=  inst_i[15:11];
+		wreg_o	<= `WriteDisable;
+		reg1_en	<= `REGDisable;
+		reg2_en <= `REGDisable;
+		reg1_read_o	<= inst_i[25:21];
+		reg2_read_o	<= inst_i[20:16];
+		imm			<= `ZeroWord;
+		link_addr_o	<= `ZeroWord;
+		branch_target_address_o	<= `ZeroWord;
+		branch_flag_o	<= `NotBranch;
+		next_inst_in_delayslot_o <= `NotInDelaySlot;
+		case (op)
+			`EXE_SPECIAL_INST: begin
+				case (op2) 
+					5'b00000:	begin
+						case (op3)
+							`EXE_OR: begin
+								wreg_o 	<= 	`WriteEnable;
+								wd_o	<=  inst_i[15:11];
+								aluop_o <=	`EXE_OR_OP;
+								alusel_o<= 	`EXE_RES_LOGIC;
+								reg1_en <=	`REGEnable;
+								reg2_en <= 	`REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_AND:begin
+								wreg_o 	<= 	`WriteEnable;
+								wd_o	<=  inst_i[15:11];
+								aluop_o <=	`EXE_AND_OP;
+								alusel_o<= 	`EXE_RES_LOGIC;
+								reg1_en <=	`REGEnable;
+								reg2_en <= 	`REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_XOR:begin
+								wreg_o 	<= 	`WriteEnable;
+								wd_o	<=  inst_i[15:11];
+								aluop_o <=	`EXE_XOR_OP;
+								alusel_o<= 	`EXE_RES_LOGIC;
+								reg1_en <=	`REGEnable;
+								reg2_en <= 	`REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_NOR:begin
+								wreg_o 	<= 	`WriteEnable;
+								wd_o	<=  inst_i[15:11];
+								aluop_o <=	`EXE_NOR_OP;
+								alusel_o<= 	`EXE_RES_LOGIC;
+								reg1_en <=	`REGEnable;
+								reg2_en <= 	`REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_SLLV:begin
+								wreg_o 	<= 	`WriteEnable;
+								wd_o	<=  inst_i[15:11];
+								aluop_o <=	`EXE_SLL_OP;
+								alusel_o<= 	`EXE_RES_SHIFT;
+								reg1_en <=	`REGEnable;
+								reg2_en <= 	`REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_SRLV:begin
+								wreg_o 		<= 	`WriteEnable;
+								wd_o		<=  inst_i[15:11];
+								aluop_o 	<=	`EXE_SRL_OP;
+								alusel_o	<= 	`EXE_RES_SHIFT;
+								reg1_en 	<=	`REGEnable;
+								reg2_en 	<= 	`REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								wd_o		<=  inst_i[15:11];
+							end
+							`EXE_SRAV:begin
+								wreg_o 	<= 	`WriteEnable;
+								wd_o	<=  inst_i[15:11];
+								aluop_o <=	`EXE_SRA_OP;
+								alusel_o<= 	`EXE_RES_SHIFT;
+								reg1_en <=	`REGEnable;
+								reg2_en <= 	`REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_SYNC:begin
+								wreg_o 	<= 	`WriteDisable;
+								aluop_o <=	`EXE_NOP_OP;
+								alusel_o<= 	`EXE_RES_NOP;
+								reg1_en <=	`REGDisable;
+								reg2_en <= 	`REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								
+							end
+							`EXE_MFHI: begin
+								wreg_o	<= `WriteEnable;
+								aluop_o	<= `EXE_MFHI_OP;
+								alusel_o<= `EXE_RES_MOVE;
+								reg1_en	<= `REGDisable;
+								reg2_en	<= `REGDisable;
+								wd_o	<= inst_i[15:11];
+							end
+							`EXE_MFLO: begin
+								wreg_o	<= `WriteEnable;
+								aluop_o	<= `EXE_MFLO_OP;
+								alusel_o<= `EXE_RES_MOVE;
+								reg1_en	<= `REGDisable;
+								reg2_en	<= `REGDisable;
+								wd_o	<= inst_i[15:11];
+							end
+							`EXE_MTHI:begin
+								wreg_o	<= `WriteDisable;
+								aluop_o	<= `EXE_MTHI_OP;
+								reg1_en	<= `REGEnable;
+								reg2_en	<= `REGDisable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_MTLO:begin
+								wreg_o	<= `WriteDisable;
+								aluop_o	<= `EXE_MTLO_OP;
+								reg1_en	<= `REGEnable;
+								reg2_en	<= `REGDisable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_MOVN:begin
+								aluop_o 	<= `EXE_MOVN_OP;
+								alusel_o	<= `EXE_RES_MOVE;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								if(reg2_o != `ZeroWord) begin
+									wreg_o <= `WriteEnable;
+								end else begin
+									wreg_o <= `WriteDisable;
 								end
-								`EXE_AND:begin
-									wreg_o 	<= 	`WriteEnable;
-									wd_o	<=  inst_i[15:11];
-									aluop_o <=	`EXE_AND_OP;
-									alusel_o<= 	`EXE_RES_LOGIC;
-									reg1_en <=	`REGEnable;
-									reg2_en <= 	`REGEnable;
-									reg1_read_o <=	inst_i[25:21];
-									reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_MOVZ:begin
+								aluop_o 	<= `EXE_MOVZ_OP;
+								alusel_o	<= `EXE_RES_MOVE;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								if(reg2_o == `ZeroWord) begin
+									wreg_o <= `WriteEnable;
+								end else begin
+									wreg_o <= `WriteDisable;
 								end
-								`EXE_XOR:begin
-									wreg_o 	<= 	`WriteEnable;
-									wd_o	<=  inst_i[15:11];
-									aluop_o <=	`EXE_XOR_OP;
-									alusel_o<= 	`EXE_RES_LOGIC;
-									reg1_en <=	`REGEnable;
-									reg2_en <= 	`REGEnable;
-									reg1_read_o <=	inst_i[25:21];
-									reg2_read_o <=	inst_i[20:16];
-								end
-								`EXE_NOR:begin
-									wreg_o 	<= 	`WriteEnable;
-									wd_o	<=  inst_i[15:11];
-									aluop_o <=	`EXE_NOR_OP;
-									alusel_o<= 	`EXE_RES_LOGIC;
-									reg1_en <=	`REGEnable;
-									reg2_en <= 	`REGEnable;
-									reg1_read_o <=	inst_i[25:21];
-									reg2_read_o <=	inst_i[20:16];
-								end
-								`EXE_SLLV:begin
-									wreg_o 	<= 	`WriteEnable;
-									wd_o	<=  inst_i[15:11];
-									aluop_o <=	`EXE_SLL_OP;
-									alusel_o<= 	`EXE_RES_SHIFT;
-									reg1_en <=	`REGEnable;
-									reg2_en <= 	`REGEnable;
-									reg1_read_o <=	inst_i[25:21];
-									reg2_read_o <=	inst_i[20:16];
-								end
-								`EXE_SRLV:begin
-									wreg_o 	<= 	`WriteEnable;
-									wd_o	<=  inst_i[15:11];
-									aluop_o <=	`EXE_SRL_OP;
-									alusel_o<= 	`EXE_RES_SHIFT;
-									reg1_en <=	`REGEnable;
-									reg2_en <= 	`REGEnable;
-									reg1_read_o <=	inst_i[25:21];
-									reg2_read_o <=	inst_i[20:16];
-								end
-								`EXE_SRAV:begin
-									wreg_o 	<= 	`WriteEnable;
-									wd_o	<=  inst_i[15:11];
-									aluop_o <=	`EXE_SRA_OP;
-									alusel_o<= 	`EXE_RES_SHIFT;
-									reg1_en <=	`REGEnable;
-									reg2_en <= 	`REGEnable;
-									reg1_read_o <=	inst_i[25:21];
-									reg2_read_o <=	inst_i[20:16];
-								end
-								`EXE_SYNC:begin
-									wreg_o 	<= 	`WriteDisable;
-									aluop_o <=	`EXE_NOP_OP;
-									alusel_o<= 	`EXE_RES_NOP;
-									reg1_en <=	`REGDisable;
-									reg2_en <= 	`REGEnable;
-									reg1_read_o <=	inst_i[25:21];
-									reg2_read_o <=	inst_i[20:16];
-									
-								end
-								default:begin
-								end
-							endcase
-						end
-						default:begin
-						end
-					endcase
-				end
-				`EXE_ORI: begin
-					aluop_o 	<= `EXE_OR_OP;
-					alusel_o 	<= `EXE_RES_LOGIC;
-					wd_o 		<= inst_i[20:16];
-					wreg_o 		<= `WriteEnable;
-					reg1_read_o <=	inst_i[25:21];
-					reg2_read_o <=	inst_i[20:16];
-					reg1_en 	<= `REGEnable;
-					reg2_en		<= `REGDisable;
-					imm 		<= {16'h0,inst_i[15:0]};
-				end
-				`EXE_ANDI:begin
-					aluop_o 	<= `EXE_AND_OP;
-					alusel_o 	<= `EXE_RES_LOGIC;
-					wd_o 		<= inst_i[20:16];
-					wreg_o 		<= `WriteEnable;
-					reg1_read_o <=	inst_i[25:21];
-					reg2_read_o <=	inst_i[20:16];
-					reg1_en 	<= `REGEnable;
-					reg2_en		<= `REGDisable;
-					imm 		<= {16'h0,inst_i[15:0]};
-				end
-				`EXE_XORI:begin
-					aluop_o 	<= `EXE_XOR_OP;
-					alusel_o 	<= `EXE_RES_LOGIC;
-					wd_o 		<= inst_i[20:16];
-					wreg_o 		<= `WriteEnable;
-					reg1_read_o <=	inst_i[25:21];
-					reg2_read_o <=	inst_i[20:16];
-					reg1_en 	<= `REGEnable;
-					reg2_en		<= `REGDisable;
-					imm 		<= {16'h0,inst_i[15:0]};
-				end
-				`EXE_LUI:begin
-					aluop_o 	<= `EXE_OR_OP;
-					alusel_o 	<= `EXE_RES_LOGIC;
-					wd_o 		<= inst_i[20:16];
-					wreg_o 		<= `WriteEnable;
-					reg1_read_o <=	inst_i[25:21];
-					reg2_read_o <=	inst_i[20:16];
-					reg1_en 	<= `REGEnable;
-					reg2_en		<= `REGDisable;
-					imm 		<= {inst_i[15:0],16'h0};
-				end
-				`EXE_PREF:begin
-					aluop_o 	<= `EXE_NOP_OP;
-					alusel_o 	<= `EXE_RES_NOP;
-					wd_o 		<= inst_i[20:16];
-					wreg_o 		<= `WriteDisable;
-					reg1_read_o <=	inst_i[25:21];
-					reg2_read_o <=	inst_i[20:16];
-					reg1_en 	<= `REGDisable;
-					reg2_en		<= `REGDisable;
-					imm 		<= {16'h0,inst_i[15:0]};
-				end
-				default:begin
-				end
-			endcase
-			if(inst_i[31:21] == 11'b00000000000) begin
-				case(op3)
-					`EXE_SLL:begin
-						aluop_o 	<= `EXE_SLL_OP;
-						alusel_o 	<= `EXE_RES_SHIFT;
-						wd_o 		<= inst_i[15:11];
-						wreg_o 		<= `WriteEnable;
-						reg1_read_o <=	inst_i[25:21];
-						reg2_read_o <=	inst_i[20:16];
-						reg1_en 	<= `REGDisable;
-						reg2_en		<= `REGEnable;
-						imm 		<= {27'h0,inst_i[10:6]};
-					end
-					`EXE_SRL:begin
-						aluop_o 	<= `EXE_SRL_OP;
-						alusel_o 	<= `EXE_RES_SHIFT;
-						wd_o 		<= inst_i[15:11];
-						wreg_o 		<= `WriteEnable;
-						reg1_read_o <=	inst_i[25:21];
-						reg2_read_o <=	inst_i[20:16];
-						reg1_en 	<= `REGDisable;
-						reg2_en		<= `REGEnable;
-						imm 		<= {27'h0,inst_i[10:6]};
-					end
-					`EXE_SRA:begin
-						aluop_o 	<= `EXE_SRA_OP;
-						alusel_o 	<= `EXE_RES_SHIFT;
-						wd_o 		<= inst_i[15:11];
-						wreg_o 		<= `WriteEnable;
-						reg1_read_o <=	inst_i[25:21];
-						reg2_read_o <=	inst_i[20:16];
-						reg1_en 	<= `REGDisable;
-						reg2_en		<= `REGEnable;
-						imm 		<= {27'h0,inst_i[10:6]};
+							end
+							`EXE_SLT: begin
+								wreg_o 		<= `WriteEnable;
+								aluop_o		<= `EXE_SLT_OP;
+								alusel_o 	<= `EXE_RES_ARITHMETIC;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								wd_o		<= inst_i[15:11];
+							end
+							`EXE_SLTU: begin
+								wreg_o 		<= `WriteEnable;
+								aluop_o		<= `EXE_SLTU_OP;
+								alusel_o 	<= `EXE_RES_ARITHMETIC;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								wd_o		<= inst_i[15:11];
+							end
+							`EXE_ADD: begin
+								wreg_o 		<= `WriteEnable;
+								aluop_o		<= `EXE_ADD_OP;
+								alusel_o 	<= `EXE_RES_ARITHMETIC;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								wd_o		<= inst_i[15:11];
+							end
+							`EXE_ADDU: begin
+								wreg_o 		<= `WriteEnable;
+								aluop_o		<= `EXE_ADDU_OP;
+								alusel_o 	<= `EXE_RES_ARITHMETIC;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								wd_o		<= inst_i[15:11];
+							end
+							`EXE_SUB: begin
+								wreg_o 		<= `WriteEnable;
+								aluop_o		<= `EXE_SUB_OP;
+								alusel_o 	<= `EXE_RES_ARITHMETIC;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								wd_o		<= inst_i[15:11];
+							end
+							`EXE_SUBU: begin
+								wreg_o 		<= `WriteEnable;
+								aluop_o		<= `EXE_SUBU_OP;
+								alusel_o 	<= `EXE_RES_ARITHMETIC;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+								wd_o		<= inst_i[15:11];
+							end
+							`EXE_MULT: begin
+								wreg_o 		<= `WriteDisable;
+								aluop_o		<= `EXE_MULT_OP;
+								alusel_o 	<= `EXE_RES_ARITHMETIC;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_MULTU: begin
+								wreg_o 		<= `WriteDisable;
+								aluop_o		<= `EXE_MULTU_OP;
+								alusel_o 	<= `EXE_RES_ARITHMETIC;
+								reg1_en		<= `REGEnable;
+								reg2_en		<= `REGEnable;
+								reg1_read_o <=	inst_i[25:21];
+								reg2_read_o <=	inst_i[20:16];
+							end
+							`EXE_JR:begin
+								wreg_o <= `WriteDisable;
+								aluop_o<= `EXE_JR_OP;
+								alusel_o<= `EXE_RES_JUMP_BRANCH;
+								reg1_en	<= `REGEnable;
+								reg2_en	<= `REGEnable;
+								link_addr_o <= `ZeroWord;
+								branch_target_address_o <= reg1_o;
+								branch_flag_o <= `Branch;
+								next_inst_in_delayslot_o <= `InDelaySlot;
+							end
+							`EXE_JALR: begin
+								wreg_o <= `WriteDisable;
+								aluop_o<= `EXE_JALR_OP;
+								alusel_o<= `EXE_RES_JUMP_BRANCH;
+								reg1_en	<= `REGEnable;
+								reg2_en	<= `REGEnable;
+								wd_o	<= inst_i[15:11];
+								link_addr_o <= pc_plus_8;
+								branch_target_address_o <= reg1_o;
+								branch_flag_o <= `Branch;
+								next_inst_in_delayslot_o <= `InDelaySlot;
+							end
+							default:begin
+							end
+						endcase
 					end
 					default:begin
 					end
 				endcase
 			end
+			`EXE_ORI: begin
+				aluop_o 	<= `EXE_OR_OP;
+				alusel_o 	<= `EXE_RES_LOGIC;
+				wd_o 		<= inst_i[20:16];
+				wreg_o 		<= `WriteEnable;
+				reg1_read_o <=	inst_i[25:21];
+				reg2_read_o <=	inst_i[20:16];
+				reg1_en 	<= `REGEnable;
+				reg2_en		<= `REGDisable;
+				imm 		<= {16'h0,inst_i[15:0]};
+			end
+			`EXE_ANDI:begin
+				aluop_o 	<= `EXE_AND_OP;
+				alusel_o 	<= `EXE_RES_LOGIC;
+				wd_o 		<= inst_i[20:16];
+				wreg_o 		<= `WriteEnable;
+				reg1_read_o <=	inst_i[25:21];
+				reg2_read_o <=	inst_i[20:16];
+				reg1_en 	<= `REGEnable;
+				reg2_en		<= `REGDisable;
+				imm 		<= {16'h0,inst_i[15:0]};
+			end
+			`EXE_XORI:begin
+				aluop_o 	<= `EXE_XOR_OP;
+				alusel_o 	<= `EXE_RES_LOGIC;
+				wd_o 		<= inst_i[20:16];
+				wreg_o 		<= `WriteEnable;
+				reg1_read_o <=	inst_i[25:21];
+				reg2_read_o <=	inst_i[20:16];
+				reg1_en 	<= `REGEnable;
+				reg2_en		<= `REGDisable;
+				imm 		<= {16'h0,inst_i[15:0]};
+			end
+			`EXE_LUI:begin
+				aluop_o 	<= `EXE_OR_OP;
+				alusel_o 	<= `EXE_RES_LOGIC;
+				wd_o 		<= inst_i[20:16];
+				wreg_o 		<= `WriteEnable;
+				reg1_read_o <=	inst_i[25:21];
+				reg2_read_o <=	inst_i[20:16];
+				reg1_en 	<= `REGEnable;
+				reg2_en		<= `REGDisable;
+				imm 		<= {inst_i[15:0],16'h0};
+			end
+			`EXE_PREF:begin
+				aluop_o 	<= `EXE_NOP_OP;
+				alusel_o 	<= `EXE_RES_NOP;
+				wd_o 		<= inst_i[20:16];
+				wreg_o 		<= `WriteDisable;
+				reg1_read_o <=	inst_i[25:21];
+				reg2_read_o <=	inst_i[20:16];
+				reg1_en 	<= `REGDisable;
+				reg2_en		<= `REGDisable;
+				imm 		<= {16'h0,inst_i[15:0]};
+			end
+			`EXE_SLTI:begin
+				wreg_o 		<= `WriteEnable;
+				aluop_o		<= `EXE_SLT_OP;
+				alusel_o 	<= `EXE_RES_ARITHMETIC;
+				reg1_en		<= `REGEnable;
+				reg2_en		<= `REGDisable;
+				reg1_read_o <=	inst_i[25:21];
+				imm 		<=  {{16{inst_i[15]}},inst_i[15:0]};
+				wd_o		<= 	inst_i[20:16];	
+			end
+			`EXE_SLTIU:begin
+				wreg_o 		<= `WriteEnable;
+				aluop_o		<= `EXE_SLTU_OP;
+				alusel_o 	<= `EXE_RES_ARITHMETIC;
+				reg1_en		<= `REGEnable;
+				reg2_en		<= `REGDisable;
+				reg1_read_o <=	inst_i[25:21];
+				imm 		<=  {{16{inst_i[15]}},inst_i[15:0]};
+				wd_o		<= 	inst_i[20:16];
+			end
+			`EXE_ADDI:begin
+				wreg_o 		<= `WriteEnable;
+				aluop_o		<= `EXE_ADDI_OP;
+				alusel_o 	<= `EXE_RES_ARITHMETIC;
+				reg1_en		<= `REGEnable;
+				reg2_en		<= `REGDisable;
+				reg1_read_o <=	inst_i[25:21];
+				imm 		<=  {{16{inst_i[15]}},inst_i[15:0]};
+				wd_o		<= 	inst_i[20:16];
+			end
+			`EXE_ADDIU:begin
+				wreg_o 		<= `WriteEnable;
+				aluop_o		<= `EXE_ADDIU_OP;
+				alusel_o 	<= `EXE_RES_ARITHMETIC;
+				reg1_en		<= `REGEnable;
+				reg2_en		<= `REGDisable;
+				reg1_read_o <=	inst_i[25:21];
+				imm 		<=  {{16{inst_i[15]}},inst_i[15:0]};
+				wd_o		<= 	inst_i[20:16];
+			end
+			`EXE_J:begin
+				wreg_o <= `WriteDisable;
+				aluop_o<= `EXE_J_OP;
+				alusel_o<= `EXE_RES_JUMP_BRANCH;
+				reg1_en <= `WriteDisable;
+				reg2_en <= `WriteDisable;
+				link_addr_o <= `ZeroWord;
+				branch_flag_o <= `Branch;
+				next_inst_in_delayslot_o <= `InDelaySlot;
+				branch_target_address_o <= {pc_plus_4[31:28],inst_i[25:0],2'b00};
+			end
+			`EXE_JAL:begin
+				wreg_o <= `WriteEnable;
+				aluop_o<= `EXE_JAL_OP;
+				alusel_o<= `EXE_RES_JUMP_BRANCH;
+				reg1_en <= `WriteDisable;
+				reg2_en <= `WriteDisable;
+				wd_o	<= 5'b11111;
+				link_addr_o <= pc_plus_8;
+				branch_flag_o <= `Branch;
+				next_inst_in_delayslot_o <= `InDelaySlot;
+				branch_target_address_o <= {pc_plus_4[31:28],inst_i[25:0],2'b00};
+			end
+			`EXE_BEQ:begin
+				wreg_o <= `WriteDisable;
+				aluop_o<= `EXE_BEQ_OP;
+				alusel_o<= `EXE_RES_JUMP_BRANCH;
+				reg1_en <= `REGEnable;
+				reg2_en	<= `REGEnable;
+				if(reg1_o == reg2_o) begin
+					branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+					branch_flag_o			<= `Branch;
+					next_inst_in_delayslot_o<= `InDelaySlot;
+				end
+			end
+			`EXE_BGTZ:begin
+				wreg_o <= `WriteDisable;
+				aluop_o<= `EXE_BGTZ_OP;
+				alusel_o<= `EXE_RES_JUMP_BRANCH;
+				reg1_en <= `REGEnable;
+				reg2_en	<= `REGDisable;
+				if((reg1_o[31] == 1'b0) && (reg1_o != `ZeroWord)) begin
+					branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+					branch_flag_o			<= `Branch;
+					next_inst_in_delayslot_o<= `InDelaySlot;
+				end
+			end
+			`EXE_BLEZ:begin
+				wreg_o <= `WriteDisable;
+				aluop_o<= `EXE_BLEZ_OP;
+				alusel_o<= `EXE_RES_JUMP_BRANCH;
+				reg1_en <= `REGEnable;
+				reg2_en	<= `REGDisable;
+				if((reg1_o[31] == 1'b1) && (reg1_o != `ZeroWord)) begin
+					branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+					branch_flag_o			<= `Branch;
+					next_inst_in_delayslot_o<= `InDelaySlot;
+				end
+			end
+			`EXE_BNE:begin
+				wreg_o <= `WriteDisable;
+				aluop_o<= `EXE_BNE_OP;
+				alusel_o<= `EXE_RES_JUMP_BRANCH;
+				reg1_en <= `REGEnable;
+				reg2_en	<= `REGEnable;
+				if(reg1_o != reg2_o) begin
+					branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+					branch_flag_o			<= `Branch;
+					next_inst_in_delayslot_o<= `InDelaySlot;
+				end
+			end
+			`EXE_REGIMM_INST:begin
+				case (op4)
+					`EXE_BLTZ:begin
+						wreg_o <= `WriteDisable;
+						aluop_o<= `EXE_BLTZ_OP;
+						alusel_o<= `EXE_RES_JUMP_BRANCH;
+						reg1_en<= `WriteEnable;
+						reg2_en<= `WriteDisable;
+						if (reg1_o[31] == 1'b1) begin
+							branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+							branch_flag_o			<= `Branch;
+							next_inst_in_delayslot_o<= `InDelaySlot;
+						end
+					end
+					`EXE_BLTZAL:begin
+						wreg_o <= `WriteEnable;
+						aluop_o<= `EXE_BLTZAL_OP;
+						alusel_o<= `EXE_RES_JUMP_BRANCH;
+						link_addr_o<= pc_plus_8;
+						reg1_en<= `WriteEnable;
+						reg2_en<= `WriteDisable;
+						wd_o	<= 5'b11111;
+						if (reg1_o[31] == 1'b1) begin
+							branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+							branch_flag_o			<= `Branch;
+							next_inst_in_delayslot_o<= `InDelaySlot;
+						end
+					end
+					`EXE_BGEZ:begin
+						wreg_o <= `WriteDisable;
+						aluop_o<= `EXE_BGEZ_OP;
+						alusel_o<= `EXE_RES_JUMP_BRANCH;
+						reg1_en<= `WriteEnable;
+						reg2_en<= `WriteDisable;
+						if (reg1_o[31] == 1'b0) begin
+							branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+							branch_flag_o			<= `Branch;
+							next_inst_in_delayslot_o<= `InDelaySlot;
+						end
+					end
+					`EXE_BGEZAL:begin
+						wreg_o <= `WriteEnable;
+						aluop_o<= `EXE_BGEZAL_OP;
+						alusel_o<= `EXE_RES_JUMP_BRANCH;
+						link_addr_o<= pc_plus_8;
+						reg1_en<= `WriteEnable;
+						reg2_en<= `WriteDisable;
+						wd_o	<= 5'b11111;
+						if (reg1_o[31] == 1'b0) begin
+							branch_target_address_o <= pc_plus_4 + imm_sll2_signedext;
+							branch_flag_o			<= `Branch;
+							next_inst_in_delayslot_o<= `InDelaySlot;
+						end
+					end
+				endcase
+			end
+			`EXE_SPECIAL2_INST: begin
+				case (op3)
+					`EXE_CLZ: begin
+						wreg_o 		<= `WriteEnable;
+						aluop_o		<= `EXE_CLZ_OP;
+						alusel_o 	<= `EXE_RES_ARITHMETIC;
+						reg1_en		<= `REGEnable;
+						reg2_en		<= `REGDisable;
+						reg1_read_o <=	inst_i[25:21];
+						wd_o		<= 	inst_i[15:11];
+					end
+					`EXE_CLO: begin
+						wreg_o 		<= `WriteEnable;
+						aluop_o		<= `EXE_CLO_OP;
+						alusel_o 	<= `EXE_RES_ARITHMETIC;
+						reg1_en		<= `REGEnable;
+						reg2_en		<= `REGDisable;
+						reg1_read_o <=	inst_i[25:21];
+						wd_o		<= 	inst_i[15:11];
+					end
+					`EXE_MUL: begin
+						wreg_o 		<= `WriteEnable;
+						aluop_o		<= `EXE_MUL_OP;
+						alusel_o 	<= `EXE_RES_MUL;
+						reg1_en		<= `REGEnable;
+						reg2_en		<= `REGEnable;
+						reg1_read_o <=	inst_i[25:21];
+						reg2_read_o <=  inst_i[20:16];
+						wd_o		<= 	inst_i[15:11];
+					end
+					default: begin
+					end
+				endcase
+			end
+			`EXE_LW: begin
+				wreg_o	<= `WriteEnable;
+				aluop_o	<= `EXE_LW_OP;
+				alusel_o<= `EXE_RES_LOAD_STORE;
+				reg1_en	<= `REGEnable;
+				reg2_en	<= `REGDisable;
+				wd_o	<= inst_i[20:16];
+			end
+			`EXE_SW: begin
+				wreg_o	<= `WriteDisable;
+				aluop_o	<= `EXE_SW_OP;
+				alusel_o<= `EXE_RES_LOAD_STORE;
+				reg1_en	<= `REGEnable;
+				reg2_en	<= `REGEnable;
+			end
+			default:begin
+			end
+		endcase
+		if(inst_i[31:21] == 11'b00000000000) begin
+			case(op3)
+				`EXE_SLL:begin
+					aluop_o 	<= `EXE_SLL_OP;
+					alusel_o 	<= `EXE_RES_SHIFT;
+					wd_o 		<= inst_i[15:11];
+					wreg_o 		<= `WriteEnable;
+					reg1_read_o <=	inst_i[25:21];
+					reg2_read_o <=	inst_i[20:16];
+					reg1_en 	<= `REGDisable;
+					reg2_en		<= `REGEnable;
+					imm 		<= {27'h0,inst_i[10:6]};
+				end
+				`EXE_SRL:begin
+					aluop_o 	<= `EXE_SRL_OP;
+					alusel_o 	<= `EXE_RES_SHIFT;
+					wd_o 		<= inst_i[15:11];
+					wreg_o 		<= `WriteEnable;
+					reg1_read_o <=	inst_i[25:21];
+					reg2_read_o <=	inst_i[20:16];
+					reg1_en 	<= `REGDisable;
+					reg2_en		<= `REGEnable;
+					imm 		<= {27'h0,inst_i[10:6]};
+				end
+				`EXE_SRA:begin
+					aluop_o 	<= `EXE_SRA_OP;
+					alusel_o 	<= `EXE_RES_SHIFT;
+					wd_o 		<= inst_i[15:11];
+					wreg_o 		<= `WriteEnable;
+					reg1_read_o <=	inst_i[25:21];
+					reg2_read_o <=	inst_i[20:16];
+					reg1_en 	<= `REGDisable;
+					reg2_en		<= `REGEnable;
+					imm 		<= {27'h0,inst_i[10:6]};
+				end
+				default:begin
+				end
+			endcase
 		end
-	end
+		if(inst_i[31:21] == 11'b01000000000 && inst_i[10:0] == 11'b00000000000) begin
+			aluop_o 	<= `EXE_MFC0_OP;
+			alusel_o 	<= `EXE_RES_MOVE;
+			wd_o	 	<= inst_i[20:16];
+			wreg_o		<= `WriteEnable;
+			reg1_en 	<= `REGDisable;
+			reg2_en 	<= `REGDisable;
+		end else if(inst_i[31:21] == 11'b01000000100 && inst_i[10:0] == 11'b00000000000) begin
+			aluop_o 	<= `EXE_MTC0_OP;
+			alusel_o 	<= `EXE_RES_NOP;
+			wreg_o		<= `WriteDisable;
+			reg1_en 	<= `REGEnable;
+			reg1_read_o <= inst_i[20:16];
+			reg2_en 	<= `REGDisable;
+		end
+	end	
+end
 	
 	always@(*) begin
+		stallreq_for_reg1_loadrelate <= `NoStop;
+		
 		if(resetn == `RstEnable) begin
 			reg1_o <= `ZeroWord;
+		end else if(pre_inst_is_load == 1'b1 && ex_wd == reg1_read_o && reg1_en == `REGEnable) begin
+			stallreq_for_reg1_loadrelate <= `Stop;
+			
 		end else if((ex_wreg == `WriteEnable) && (ex_wd == reg1_read_o) && ( reg1_en == `REGEnable)) begin
 			reg1_o <= ex_wdata;
 		end else if((mem_wreg == `WriteEnable) && (mem_wd == reg1_read_o) && (reg1_en == `REGEnable)) begin
@@ -317,8 +717,11 @@ module ID(
 	end
 	
 	always@(*) begin
+		stallreq_for_reg2_loadrelate <= `NoStop;
 		if(resetn == `RstEnable) begin
 			reg2_o <= `ZeroWord;
+		end else if(pre_inst_is_load == 1'b1 && ex_wd == reg2_read_o && reg2_en == `REGEnable) begin
+			stallreq_for_reg2_loadrelate <= `Stop;
 		end else if((ex_wreg == `WriteEnable) && (ex_wd == reg2_read_o) && ( reg2_en == `REGEnable)) begin
 			reg2_o <= ex_wdata;
 		end else if((mem_wreg == `WriteEnable) && (mem_wd == reg2_read_o) && (reg2_en == `REGEnable)) begin
@@ -331,4 +734,14 @@ module ID(
 			reg2_o <= `ZeroWord;
 		end
 	end
+		
+	always @(*) begin 
+		if (resetn == `RstEnable ) begin
+ 			is_in_delayslot_o <= `NotInDelaySlot;
+		end else begin
+			is_in_delayslot_o <= is_in_delayslot_i;
+		end
+	end
+	
+	assign stallreq = stallreq_for_reg1_loadrelate | stallreq_for_reg2_loadrelate;
 endmodule
