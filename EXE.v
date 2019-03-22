@@ -44,6 +44,15 @@ module EXE(
 	
 	input wire [31:0] inst_i,
 	
+	input wire [31:0] cp0_reg_data_i,
+	input wire  mem_cp0_reg_we,
+	input wire [4:0] mem_cp0_reg_write_addr,
+	input wire [31:0] mem_cp0_reg_data,
+	
+	input wire wb_cp0_reg_we,
+	input wire [4:0] wb_cp0_reg_write_addr,
+	input wire [31:0] wb_cp0_reg_data,
+
     output reg [31:0] wdata_o,
     output reg [4:0] wd_o,
     output reg wreg_o,
@@ -53,7 +62,12 @@ module EXE(
 	output  stallreq,
 	output  [7:0] aluop_o,
 	output  [31:0] mem_addr_o,
-	output  [31:0] ex_reg2
+	output  [31:0] ex_reg2,
+
+	output reg [4:0] cp0_reg_read_addr_o,
+	output reg cp0_reg_we_o,
+	output reg [4:0] cp0_reg_write_addr_o,
+	output reg [31:0] cp0_reg_data_o
 	);
 	reg [31:0] logicout;
 	reg [31:0] shiftout;
@@ -269,6 +283,15 @@ module EXE(
 				`EXE_MOVN_OP:begin
 					moveout <= reg1_i;
 				end
+				`EXE_MFC0_OP: begin
+					cp0_reg_read_addr_o <= inst_i[15:11];
+					moverout			<= cp0_reg_data_i;
+					if ( mem_cp0_reg_we == `WriteEnable && mem_cp0_reg_write_addr == inst_i[15:11]) begin
+						moveout <= mem_cp0_reg_data;
+					end else if (wb_cp0_reg_we == `WriteEnable && wb_cp0_reg_write_addr == inst_i[15:11] ) begin
+						moveout <= wb_cp0_reg_data;
+					end
+				end
 				default:begin
 				end
 			endcase
@@ -276,6 +299,21 @@ module EXE(
 	end
 	
 
+	always@(*) begin
+		if(resetn == `RstEnable) begin
+			cp0_reg_write_addr_o	<= 5'b00000;
+			cp0_reg_we_o 			<= `WriteDisable;
+			cp0_reg_data_o			<= `ZeroWord;
+		end else if(aluop_i == `EXE_MTC0_OP) begin
+			cp0_reg_write_addr_o 	<= inst_i[15:11];
+			cp0_reg_we_o 			<= `WriteEnable;
+			cp0_reg_data_o 			<= reg1_i;
+		end else begin
+			cp0_reg_write_addr_o	<= 5'b00000;
+			cp0_reg_we_o 			<= `WriteDisable;
+			cp0_reg_data_o			<= `ZeroWord;
+		end
+	end
 
 
 	always@(*) begin

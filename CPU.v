@@ -108,7 +108,25 @@ module CPU(
 	wire mem_mem_we;
 	wire [31:0] mem_mem_data;
 	
-	
+	wire [31:0] mem_cp0_reg_data;
+	wire [4:0] mem_cp0_reg_write_addr;
+	wire mem_cp0_reg_we;
+
+	wire [31:0] mem_wb_wb_cp0_reg_data;
+	wire [4:0] mem_wb_wb_cp0_reg_write_addr;
+	wire mem_wb_wb_cp0_reg_we;
+
+	wire [31:0] ex_cp0_reg_data_o;
+	wire [4:0] ex_cp0_reg_write_addr_o;
+	wire ex_cp0_reg_we_o;
+
+	wire [31:0] ex_mem_mem_cp0_reg_data;
+	wire [4:0] ex_mem_mem_cp0_reg_write_addr;
+	wire ex_mem_mem_cp0_reg_we;
+
+	wire [31:0] cp0_data_o;
+	wire [4:0] ex_cp0_reg_read_addr_o;
+
 	PC mypc(.clk(clk),.resetn(resetn),
 			.stall(stall),
 			.branch_target_address_i(id_branch_target_address_o),.branch_flag_i(id_branch_flag_o),
@@ -153,41 +171,55 @@ module CPU(
 					.ex_wd_o(ex_wd_i),.ex_wreg(ex_wreg_i),
 					.ex_is_in_delayslot(id_ex_is_in_delayslot),.ex_link_address(id_ex_link_address),.is_in_delayslot_o(id_ex_is_in_delayslot_o),
 					.ex_inst(ex_inst_i));
-					
+		
+	
 	EXE myexe(.aluop_o(ex_aluop),.alusel_i(ex_alusel),.reg1_i(ex_reg1),.reg2_i(ex_reg2),.wd_i(ex_wd_i),.wreg_i(ex_wreg_i),
 			.hi_i(hi_o),.lo_i(lo_o),
 			.wb_whilo_i(whilo),.wb_hi_i(hi_i),.wb_lo_i(lo_i),
 			.mem_whilo_i(mem_whilo),.mem_hi_i(mem_hi),.mem_lo_i(mem_lo),
+ 			.cp0_reg_data_i(cp0_data_o),
+ 			.mem_cp0_reg_we(mem_cp0_reg_we),.mem_cp0_reg_write_addr(mem_cp0_reg_write_addr),.mem_cp0_reg_data(mem_cp0_reg_data),
+			.wb_cp0_reg_we(mem_wb_wb_cp0_reg_we),.wb_cp0_reg_write_addr(mem_wb_wb_cp0_reg_write_addr),.wb_cp0_reg_data(mem_wb_wb_cp0_reg_data),
 			.resetn(resetn),
 			.is_in_delayslot_i(id_ex_is_in_delayslot),.link_address_i(id_ex_link_address),.inst_i(ex_inst_i),
 			.wdata_o(ex_wdata),.wd_o(ex_wd_o),.wreg_o(ex_wreg_o),
 			.whilo_o(ex_whilo_o),.hi_o(ex_hi_o),.lo_o(ex_lo_o),
-			.stallreq(ex_stallreq),.aluop_o(exe_aluop_o),.mem_addr_o(exe_mem_addr_o),.ex_reg2(exe_ex_reg2));	
+			.stallreq(ex_stallreq),.aluop_o(exe_aluop_o),.mem_addr_o(exe_mem_addr_o),.ex_reg2(exe_ex_reg2),
+			.cp0_reg_read_addr_o(ex_cp0_reg_read_addr_o),.cp0_reg_we_o(ex_cp0_reg_we_o),.cp0_reg_write_addr_o(ex_cp0_reg_write_addr_o),.cp0_reg_data_o(ex_cp0_reg_data_o));	
 	
+
 	EX_MEM myex_mem(.ex_wdata(ex_wdata),.ex_wd(ex_wd_o),.ex_wreg(ex_wreg_o),
 					.ex_whilo(ex_whilo_o),.ex_hi(ex_hi_o),.ex_lo(ex_lo_o),
+					.ex_cp0_reg_we(ex_cp0_reg_we_o),.ex_cp0_reg_write_addr(ex_cp0_reg_write_addr_o),.ex_cp0_reg_data(ex_cp0_reg_data_o),
 					.clk(clk),.resetn(resetn),
 					.stall(stall),
 					.ex_aluop(exe_aluop_o),.ex_mem_addr(exe_mem_addr_o),.ex_reg2(exe_ex_reg2),
 					.mem_wdata(mem_wdata_i),.mem_wd(mem_wd_i),.mem_wreg(mem_wreg_i),
 					.mem_whilo(ex_whilo),.mem_hi(ex_hi),.mem_lo(ex_lo),
-					.mem_aluop(exe_mem_aluop_o),.mem_mem_addr(exe_mem_mem_addr_o),.mem_reg2(exe_mem_ex_reg2));
+					.mem_aluop(exe_mem_aluop_o),.mem_mem_addr(exe_mem_mem_addr_o),.mem_reg2(exe_mem_ex_reg2)
+					.mem_cp0_reg_we(ex_mem_mem_cp0_reg_we),.mem_cp0_reg_write_addr(ex_mem_mem_cp0_reg_write_addr),.mem_cp0_reg_data(ex_mem_mem_cp0_reg_data));
 	
+
 	MEM mymem(.wdata_i(mem_wdata_i),.wd_i(mem_wd_i),.wreg_i(mem_wreg_i),
 			.whilo_i(ex_whilo),.hi_i(ex_hi),.lo_i(ex_lo),
+			.cp0_reg_we_i(ex_mem_mem_cp0_reg_we),.cp0_reg_write_addr_i(ex_mem_mem_cp0_reg_write_addr),.cp0_reg_data_i(ex_mem_mem_cp0_reg_data),
 			.resetn(resetn),
 			.aluop_i(exe_mem_aluop_o),.mem_addr_i(exe_mem_mem_addr_o),.reg2_i(exe_mem_ex_reg2),.mem_data_i(mem_data_i),
 			.wdata_o(mem_wdata_o),.wd_o(mem_wd_o),.wreg_o(mem_wreg_o),
 			.whilo_o(mem_whilo),.hi_o(mem_hi),.lo_o(mem_lo),
-			.mem_addr_o(mem_mem_addr_o),.mem_we_o(mem_mem_we),.mem_data_o(mem_mem_data));
-			
+			.mem_addr_o(mem_mem_addr_o),.mem_we_o(mem_mem_we),.mem_data_o(mem_mem_data),
+			.cp0_reg_we_o(mem_cp0_reg_we),.cp0_reg_write_addr_o(mem_cp0_reg_write_addr),.cp0_reg_data_o(mem_cp0_reg_data));
+	
+
+
 	MEM_WB mymem_wb(.mem_wdata(mem_wdata_o),.mem_wd(mem_wd_o),.mem_wreg(mem_wreg_o),
 					.mem_whilo(mem_whilo),.mem_hi(mem_hi),.mem_lo(mem_lo),
+					.mem_cp0_reg_we(mem_cp0_reg_we),.mem_cp0_reg_write_addr(mem_cp0_reg_write_addr),.mem_cp0_reg_data(mem_cp0_reg_data),
 					.clk(clk),.resetn(resetn),
 					.stall(stall),
 					.wb_wdata(wb_wdata),.wb_wd(wb_wd),.wb_wreg(wb_wreg),
-					.wb_whilo(whilo),.wb_hi(hi_i),.wb_lo(lo_i));
-						
+					.wb_whilo(whilo),.wb_hi(hi_i),.wb_lo(lo_i),
+					.wb_cp0_reg_we(mem_wb_wb_cp0_reg_we),.wb_cp0_reg_write_addr(mem_wb_wb_cp0_reg_write_addr),.wb_cp0_reg_data(mem_wb_wb_cp0_reg_data));
 	
 	HILO myhilo(.we(whilo),.hi_i(hi_i),.lo_i(lo_i),
 				.resetn(resetn),.clk(clk),
@@ -201,7 +233,14 @@ module CPU(
 					.clk(clk),
 					.data_o(mem_data_i));
 	
-	
+
+	CP0 mycp0( .we_i(mem_wb_wb_cp0_reg_we),.waddr_i(mem_wb_wb_cp0_reg_write_addr),.wdata_i(mem_wb_wb_cp0_reg_data),
+				.int_i(),.raddr_i(ex_cp0_reg_read_addr_o),
+				.resetn(resetn),.clk(clk),
+				.data_o(cp0_data_o),
+				.count_o(),.compare_o(),.status_o(),.cause_o(),.epc_o(),.config_o(),.prid_o(),.timer_int_o());
+
+
 	assign pc = if_pc;
 	assign inst = if_inst;
 	assign result = ex_wdata;

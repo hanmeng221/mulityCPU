@@ -31,12 +31,22 @@ module MEM_WB(
     input wire clk,
     input wire resetn,
 	input wire [5:0] stall,
+
+	input wire 	mem_cp0_reg_we,
+	input wire [4:0] mem_cp0_reg_write_addr,
+	input wire [31:0] mem_cp0_reg_data,
+
     output reg [31:0] wb_wdata,
     output reg [4:0] wb_wd,
     output reg wb_wreg,
 	output reg wb_whilo,
 	output reg [31:0] wb_hi,
-	output reg [31:0] wb_lo
+	output reg [31:0] wb_lo,
+    
+    output reg wb_cp0_reg_we,
+    output reg [4:0] wb_cp0_reg_write_addr,
+    output reg [31:0] wb_cp0_reg_data
+
     );
 
 	always@(posedge clk) begin
@@ -47,6 +57,11 @@ module MEM_WB(
 			wb_whilo	<= `WriteDisable;
 			wb_hi		<= `ZeroWord;
 			wb_lo		<= `ZeroWord;
+
+			wb_cp0_reg_we <= `WriteDisable;
+			wb_cp0_reg_write_addr <= 5'b00000;
+			wb_cp0_reg_data	<= `ZeroWord;
+
 		end else if (stall[4] == `Stop && stall[5] == `NoStop ) begin
 			wb_wd		<= `NOPRegAddr;
 			wb_wdata	<= `ZeroWord;
@@ -54,6 +69,11 @@ module MEM_WB(
 			wb_whilo	<= `WriteDisable;
 			wb_hi		<= `ZeroWord;
 			wb_lo		<= `ZeroWord;
+
+			wb_cp0_reg_we <= `WriteDisable;
+			wb_cp0_reg_write_addr <= 5'b00000;
+			wb_cp0_reg_data	<= `ZeroWord;
+
 		end else if (stall[4] == `NoStop) begin
 			wb_wd		<=	mem_wd;
 			wb_wdata	<= 	mem_wdata;
@@ -61,6 +81,11 @@ module MEM_WB(
 			wb_whilo	<=  mem_whilo;
 			wb_hi		<= 	mem_hi;
 			wb_lo		<=  mem_lo;
+
+			wb_cp0_reg_we <= mem_cp0_reg_we;
+			wb_cp0_reg_write_addr <= mem_cp0_reg_write_addr;
+			wb_cp0_reg_data	<= mem_cp0_reg_data;
+
 		end
 	end
 	
