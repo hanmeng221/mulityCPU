@@ -37,7 +37,17 @@ module MEM(
 	input wire cp0_reg_we_i,
 	input wire [4:0] cp0_reg_write_addr_i,
 	input wire [31:0] cp0_reg_data_i,
-
+	
+	input wire [31:0] excepttype_i,
+	input wire [31:0] current_inst_addr_i,
+	input wire is_in_delayslot_i,
+	input wire [31:0] cp0_status_i,
+	input wire [31:0] cp0_cause_i,
+	input wire [31:0] cp0_epc_i,
+	input wire wb_cp0_reg_we,
+	input wire [4:0] wb_cp0_reg_write_addr,
+	input wire [31:0] wb_cp0_reg_data,
+	
     output reg [31:0] wdata_o,
     output reg [4:0] wd_o,
     output reg wreg_o,
@@ -51,10 +61,81 @@ module MEM(
 	
 	output reg cp0_reg_we_o,
 	output reg [4:0] cp0_reg_write_addr_o,
-	output reg [31:0] cp0_reg_data_o
-    );
+	output reg [31:0] cp0_reg_data_o,
+    
+	output reg [31:0] excepttype_o,
+	output wire [31:0] current_inst_addr_o,
+	output wire is_in_delayslot_o,
+	output wire [31:0] cp0_epc_o
+	);
 	reg mem_we;
-	assign mem_we_o	 = mem_we;
+	assign mem_we_o	 = mem_we & (~(|excepttype_o));
+	
+	assign is_in_delayslot_o = is_in_delayslot_i;
+	assign current_inst_addr_o = current_inst_addr_i;
+	
+	reg [31:0] cp0_status;
+	reg [31:0] cp0_cause;
+	reg [31:0] cp0_epc;
+	
+	always@ (*) begin
+		if(resetn == `RstEnable) begin
+			cp0_status <= `ZeroWord;
+		end else if ((wb_cp0_reg_we == `WriteEnable) && (wb_cp0_reg_write_addr == `CP0_REG_STATUS)) begin
+			cp0_status <= wb_cp0_reg_data;
+		end else begin
+			cp0_status <= cp0_status_i;
+		end
+	end
+	
+	always@ (*) begin
+		if(resetn == `RstEnable) begin
+			cp0_epc <= `ZeroWord;
+		end else if ((wb_cp0_reg_we == `WriteEnable) && (wb_cp0_reg_write_addr == `CP0_REG_EPC)) begin
+			cp0_status <= wb_cp0_reg_data;
+		end else begin
+			cp0_status <= cp0_epc_i;
+		end
+	end
+	
+	assign cp0_epc_o = cp0_epc;
+	
+	always@(*) begin
+		if(resetn == `RstEnable) begin
+			cp0_cause <= `ZeroWord;
+		end else if((wb_cp0_reg_we == `WriteEnable) && (wb_cp0_reg_write_addr == `CP0_REG_CAUSE)) begin
+			cp0_cause[9:8] <= wb_cp0_reg_data[9:8];
+			cp0_cause[22] <= wb_cp0_reg_data[22];
+			cp0_cause[23] <= wb_cp0_reg_data[23];
+		end else begin
+			cp0_cause <= cp0_cause_i;
+		end
+	end
+	 
+	 
+	always@(*) begin
+		if(resetn == `RstEnable) begin
+			excepttype_o <= `ZeroWord;
+		end else begin
+			excepttype_o <= `ZeroWord;
+			if(current_inst_addr_i != `ZeroWord) begin
+				if(((cp0_cause[15:8] &(cp0_status[15:8])) != 8'h00) && (cp0_status[1] == 1'b0) && (cp0_status[0] == 1'b1)) begin
+					excepttype_o <= 32'h00000001;
+				end else if(excepttype_i[8] == 1'b1) begin
+					excepttype_o <= 32'h00000008;
+				end else if(excepttype_i[9] == 1'b1) begin
+					excepttype_o <= 32'h0000000a;
+				end else if(excepttype_i[10] == 1'b1) begin
+					excepttype_o <= 32'h0000000d;
+				end else if(excepttype_i[11] == 1'b1) begin
+					excepttype_o <= 32'h0000000c;
+				end else if(excepttype_i[12] == 1'b1) begin
+					excepttype_o <= 32'h0000000e;
+				end
+			end
+		end
+	end
+	
 	
 	always@(*) begin
 		if (resetn == `RstEnable) begin

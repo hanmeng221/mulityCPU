@@ -34,6 +34,9 @@ module ID_EX(
 	input wire [31:0] id_link_address,
 	input wire next_inst_in_delayslot_i,
 	input wire [31:0] id_inst,
+	input wire flush,
+	input wire [31:0] id_excepttype,
+	input wire [31:0] id_current_inst_addr,
 	
     output reg [7:0] ex_aluop,
     output reg [2:0] ex_alusel,
@@ -44,8 +47,10 @@ module ID_EX(
 	output reg ex_is_in_delayslot,
 	output reg [31:0] ex_link_address,
 	output reg is_in_delayslot_o,
-	output reg [31:0] ex_inst
-    );
+	output reg [31:0] ex_inst,
+    output reg [31:0] ex_excepttype,
+	output reg [31:0] ex_current_inst_addr
+	);
 	
 	always@(posedge clk) begin
 		if (resetn == `RstEnable) begin
@@ -59,7 +64,21 @@ module ID_EX(
 			ex_is_in_delayslot <= `NotInDelaySlot;
 			is_in_delayslot_o  <= `NotInDelaySlot;
 			ex_inst		<= `ZeroWord;
-			
+			ex_excepttype <= `ZeroWord;
+			ex_current_inst_addr <= `ZeroWord;
+		end else if(flush == 1'b1 ) begin
+			ex_aluop 	<= `EXE_NOP_OP;
+			ex_alusel	<= `EXE_RES_NOP;
+			ex_reg1_o	<= `ZeroWord;
+			ex_reg2_o	<= `ZeroWord;
+			ex_wd_o		<= `NOPRegAddr;
+			ex_wreg		<= `WriteDisable;
+			ex_link_address	<= `ZeroWord;
+			ex_is_in_delayslot <= `NotInDelaySlot;
+			is_in_delayslot_o  <= `NotInDelaySlot;
+			ex_inst		<= `ZeroWord;
+			ex_excepttype <= `ZeroWord;
+			ex_current_inst_addr <= `ZeroWord;
 		end else if (stall[2] == `Stop && stall[3] == `NoStop) begin
 			ex_aluop 	<= `EXE_NOP_OP;
 			ex_alusel	<= `EXE_RES_NOP;
@@ -70,7 +89,8 @@ module ID_EX(
 			ex_link_address	<= `ZeroWord;
 			ex_is_in_delayslot <= `NotInDelaySlot;
 			ex_inst		<= `ZeroWord;
-			
+			ex_excepttype <= `ZeroWord;
+			ex_current_inst_addr <= `ZeroWord;
 		end else if (stall[2] == `NoStop ) begin
 			ex_aluop 	<= id_aluop;
 			ex_alusel	<= id_alusel;
@@ -82,6 +102,8 @@ module ID_EX(
 			ex_is_in_delayslot <= id_is_in_delayslot;
 			is_in_delayslot_o <= next_inst_in_delayslot_i;
 			ex_inst		<= id_inst;
+			ex_excepttype <= id_excepttype;
+			ex_current_inst_addr <= id_current_inst_addr;khj
 		end
 	end
 	

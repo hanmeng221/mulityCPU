@@ -26,12 +26,16 @@ module IF_ID(
     input wire clk,
     input wire resetn,
 	input wire [5:0] stall,
+	input wire flush,
     output reg [31:0] id_pc,
     output reg [31:0] id_inst
     );
 	always @(posedge clk) begin
 		if (resetn == `RstEnable) begin
 			id_pc <= `ZeroWord;
+			id_inst <= `ZeroWord;
+		end else if (flush == 1'b1) begin 
+			id_pc  <= `ZeroWord;
 			id_inst <= `ZeroWord;
 		end else if(stall[1] == `Stop && stall[2] == `NoStop )begin
 			id_pc	<= `ZeroWord;
