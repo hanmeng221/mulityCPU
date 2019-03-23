@@ -1,8 +1,0 @@
-[Inputs]
-=pc_in[31:0]=
-[Outputs]
-=inst_out[31:0]=
-[BiDir]
-[ATTRIBUTES]
-VeriModel IM
-

@@ -1,5 +1,0 @@
-xst -intstyle ise -ifn "/home/ise/openMIPS/PC.xst" -ofn "/home/ise/openMIPS/PC.syr" 
-xst -intstyle ise -ifn "/home/ise/openMIPS/PC.xst" -ofn "/home/ise/openMIPS/PC.syr" 
-vhdtdtfi -lib work /home/ise/openMIPS/PC.v -lang verilog -prj openMIPS -o PC.spl -module PC -template /opt/Xilinx/14.7/ISE_DS/ISE//data/splveri.tft -deleteonerror 
-spl2sym -intstyle ise -family aspartan6 PC.spl /home/ise/openMIPS/PC.sym 
-vhdtdtfi -lib work /home/ise/openMIPS/PC.v -lang verilog -prj openMIPS -o PC.spl -module PC -template /opt/Xilinx/14.7/ISE_DS/ISE//data/splveri.tft -deleteonerror 

@@ -1,4 +1,0 @@
-vhdtdtfi -lib work /home/ise/openMIPS/IM.v -lang verilog -prj openMIPS -o IM.spl -module IM -template /opt/Xilinx/14.7/ISE_DS/ISE//data/splveri.tft -deleteonerror 
-spl2sym -intstyle ise -family aspartan6 IM.spl /home/ise/openMIPS/IM.sym 
-vhdtdtfi -lib work /home/ise/openMIPS/IM.v -lang verilog -prj openMIPS -o IM.spl -module IM -template /opt/Xilinx/14.7/ISE_DS/ISE//data/splveri.tft -deleteonerror 
-spl2sym -intstyle ise -family aspartan6 -w IM.spl /home/ise/openMIPS/IM.sym 

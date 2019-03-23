@@ -1,2 +1,0 @@
-vhdtdtfi -lib work /home/ise/openMIPS/CP0.v -lang verilog -prj openMIPS -o CPO.spl -module CPO -template /opt/Xilinx/14.7/ISE_DS/ISE//data/splveri.tft -deleteonerror 
-vhdtdtfi -lib work /home/ise/openMIPS/CP0.v -lang verilog -prj openMIPS -o CPO.spl -module CPO -template /opt/Xilinx/14.7/ISE_DS/ISE//data/splveri.tft -deleteonerror 
