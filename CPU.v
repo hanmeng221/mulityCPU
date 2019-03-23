@@ -173,7 +173,7 @@ module CPU(
 					.ex_inst(ex_inst_i));
 		
 	
-	EXE myexe(.aluop_o(ex_aluop),.alusel_i(ex_alusel),.reg1_i(ex_reg1),.reg2_i(ex_reg2),.wd_i(ex_wd_i),.wreg_i(ex_wreg_i),
+	EXE myexe(.aluop_i(ex_aluop),.alusel_i(ex_alusel),.reg1_i(ex_reg1),.reg2_i(ex_reg2),.wd_i(ex_wd_i),.wreg_i(ex_wreg_i),
 			.hi_i(hi_o),.lo_i(lo_o),
 			.wb_whilo_i(whilo),.wb_hi_i(hi_i),.wb_lo_i(lo_i),
 			.mem_whilo_i(mem_whilo),.mem_hi_i(mem_hi),.mem_lo_i(mem_lo),
@@ -196,7 +196,7 @@ module CPU(
 					.ex_aluop(exe_aluop_o),.ex_mem_addr(exe_mem_addr_o),.ex_reg2(exe_ex_reg2),
 					.mem_wdata(mem_wdata_i),.mem_wd(mem_wd_i),.mem_wreg(mem_wreg_i),
 					.mem_whilo(ex_whilo),.mem_hi(ex_hi),.mem_lo(ex_lo),
-					.mem_aluop(exe_mem_aluop_o),.mem_mem_addr(exe_mem_mem_addr_o),.mem_reg2(exe_mem_ex_reg2)
+					.mem_aluop(exe_mem_aluop_o),.mem_mem_addr(exe_mem_mem_addr_o),.mem_reg2(exe_mem_ex_reg2),
 					.mem_cp0_reg_we(ex_mem_mem_cp0_reg_we),.mem_cp0_reg_write_addr(ex_mem_mem_cp0_reg_write_addr),.mem_cp0_reg_data(ex_mem_mem_cp0_reg_data));
 	
 

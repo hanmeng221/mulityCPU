@@ -47,7 +47,7 @@ module MEM(
 	
 	output reg [31:0] mem_addr_o,
 	output wire mem_we_o,
-	output reg [31:0] mem_data_o
+	output reg [31:0] mem_data_o,
 	
 	output reg cp0_reg_we_o,
 	output reg [4:0] cp0_reg_write_addr_o,

@@ -285,7 +285,7 @@ module EXE(
 				end
 				`EXE_MFC0_OP: begin
 					cp0_reg_read_addr_o <= inst_i[15:11];
-					moverout			<= cp0_reg_data_i;
+					moveout			<= cp0_reg_data_i;
 					if ( mem_cp0_reg_we == `WriteEnable && mem_cp0_reg_write_addr == inst_i[15:11]) begin
 						moveout <= mem_cp0_reg_data;
 					end else if (wb_cp0_reg_we == `WriteEnable && wb_cp0_reg_write_addr == inst_i[15:11] ) begin

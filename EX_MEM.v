@@ -45,7 +45,7 @@ module EX_MEM(
 	output reg [31:0] mem_lo,
 	output reg [7:0] mem_aluop,
 	output reg [31:0] mem_mem_addr,
-	output reg [31:0] mem_reg2
+	output reg [31:0] mem_reg2,
     output reg mem_cp0_reg_we,
     output reg [4:0] mem_cp0_reg_write_addr,
     output reg [31:0] mem_cp0_reg_data

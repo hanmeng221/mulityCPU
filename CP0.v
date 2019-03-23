@@ -53,7 +53,7 @@ module CP0(
 			timer_int_o	<= `InterruptNotAssert;
 		end else begin
 			count_o 	<= count_o + 1;
-			cause_o[15:11]<= int_i;
+			cause_o[15:10]<= int_i;
 			if(compare_o != `ZeroWord && count_o == compare_o ) begin
 				timer_int_o <= `InterruptAssert;
 			end
