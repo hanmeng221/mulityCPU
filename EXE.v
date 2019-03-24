@@ -41,10 +41,10 @@ module EXE(
 	
 	input wire is_in_delayslot_i,
 	input wire [31:0] link_address_i,
-	
 	input wire [31:0] inst_i,
 	
 	input wire [31:0] cp0_reg_data_i,
+	
 	input wire  mem_cp0_reg_we,
 	input wire [4:0] mem_cp0_reg_write_addr,
 	input wire [31:0] mem_cp0_reg_data,

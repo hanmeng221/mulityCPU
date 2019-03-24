@@ -31,7 +31,7 @@ module MEM_WB(
     input wire clk,
     input wire resetn,
 	input wire [5:0] stall,
-
+	input wire flush,
 	input wire 	mem_cp0_reg_we,
 	input wire [4:0] mem_cp0_reg_write_addr,
 	input wire [31:0] mem_cp0_reg_data,
@@ -61,7 +61,18 @@ module MEM_WB(
 			wb_cp0_reg_we <= `WriteDisable;
 			wb_cp0_reg_write_addr <= 5'b00000;
 			wb_cp0_reg_data	<= `ZeroWord;
+		end else if(flush == 1'b1) begin
+			wb_wd		<= `NOPRegAddr;
+			wb_wdata	<= `ZeroWord;
+			wb_wreg		<= `WriteDisable;
+			wb_whilo	<= `WriteDisable;
+			wb_hi		<= `ZeroWord;
+			wb_lo		<= `ZeroWord;
 
+			wb_cp0_reg_we <= `WriteDisable;
+			wb_cp0_reg_write_addr <= 5'b00000;
+			wb_cp0_reg_data	<= `ZeroWord;
+			
 		end else if (stall[4] == `Stop && stall[5] == `NoStop ) begin
 			wb_wd		<= `NOPRegAddr;
 			wb_wdata	<= `ZeroWord;

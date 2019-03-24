@@ -29,6 +29,9 @@ module CP0(
     input [4:0] raddr_i,
     input resetn,
     input clk,
+	input wire [31:0] excepttype__i,
+	input wire [31:0] current_inst_addr_i,
+	input wire  is_in_delayslot_i,
     output reg [31:0] data_o,
     output reg [31:0] count_o,
     output reg [31:0] compare_o,
@@ -56,8 +59,7 @@ module CP0(
 			cause_o[15:10]<= int_i;
 			if(compare_o != `ZeroWord && count_o == compare_o ) begin
 				timer_int_o <= `InterruptAssert;
-			end
-			
+			end 
 			if(we_i == `WriteEnable) begin
 				case (waddr_i)
 					`CP0_REG_COUNT: begin
@@ -80,6 +82,77 @@ module CP0(
 					end
 				endcase
 			end
+			
+			case (excepttype__i)
+				32'h00000001: begin
+					if(is_in_delayslot_i = `InDelaySlot ) begin
+						epc_o <= current_inst_addr_i - 4;
+						cause_o[31] <= 1'b1;
+					end else begin
+						epc_o <= current_inst_addr_i;
+						cause_o[31] <= 1'b0;
+					end
+					status_o[1] <= 1'b1;
+					cause_o[6:2] <= 5'b00000;
+				end
+				32'h00000008: begin
+					if(status_o[1] == 1'b0 ) begin
+						if(is_in_delayslot_i == `InDelaySlot ) begin
+							epc_o  <= current_inst_addr_i -4;
+							cause_o[31] <= 1'b1;
+						end else begin
+							epc_o <= current_inst_addr_i;
+							cause_o[31] <= 1'b0;
+						end
+					end
+					status_o[1] <= 1'b1;
+					cause_o[6:2] <= 5'b01000;
+				end
+				32'h0000000a: begin
+					if(status_o[1] == 1'b0) begin
+						if(is_in_delayslot_i == `InDelaySlot ) begin
+							epc_o <= current_inst_addr_i - 4;
+							cause_o[31]  <= 1'b1;
+						end else begin	
+							epc_o <= current_inst_addr_i ;
+							cause_o[31] <= 1'b0;
+						end
+					end
+					status_o[1] <= 1'b1;
+					cause_o[6:2] <= 5'b01010;
+				end
+				32'h0000000d: begin
+					if(status_o[1] == 1'b0) begin
+						if(is_in_delayslot_i == `InDelaySlot ) begin
+							epc_o <= current_inst_addr_i - 4;
+							cause_o[31]  <= 1'b1;
+						end else begin	
+							epc_o <= current_inst_addr_i ;
+							cause_o[31] <= 1'b0;
+						end
+					end
+					status_o[1] <= 1'b1;
+					cause_o[6:2] <= 5'b01101;
+				end
+				32'h0000000c: begin
+					if(status_o[1] == 1'b0) begin
+						if(is_in_delayslot_i == `InDelaySlot ) begin
+							epc_o <= current_inst_addr_i - 4;
+							cause_o[31]  <= 1'b1;
+						end else begin	
+							epc_o <= current_inst_addr_i ;
+							cause_o[31] <= 1'b0;
+						end
+					end
+					status_o[1] <= 1'b1;
+					cause_o[6:2] <= 5'b01100;
+				end
+				32'h0000000e: begin
+					status_o[1] <= 1'b0;
+				end
+				default: begin
+				end
+			endcase		
 		end
 	end
 	
