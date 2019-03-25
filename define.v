@@ -51,6 +51,9 @@
 `define InstValid 1'b0
 `define InstInvalid 1'b1
 
+`define TrapAssert 			1'b1
+`define TrapNotAssert 		1'b0
+
 `define ZeroWord			32'h00000000
 
 `define NOPRegAddr			5'b00000
@@ -209,7 +212,9 @@
 `define EXE_TNEI_OP 8'b01001001
 
 
-`define EXE_ERET_OP 8'b01101011
+`define EXE_SYSCALL_OP 8'b00001100
+
+`define EXE_ERET_OP 	8'b01101011
 
 `define CP0_REG_COUNT 		5'b01001
 `define CP0_REG_COMPARE		5'b01011

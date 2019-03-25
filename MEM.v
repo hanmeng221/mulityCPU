@@ -92,9 +92,9 @@ module MEM(
 		if(resetn == `RstEnable) begin
 			cp0_epc <= `ZeroWord;
 		end else if ((wb_cp0_reg_we == `WriteEnable) && (wb_cp0_reg_write_addr == `CP0_REG_EPC)) begin
-			cp0_status <= wb_cp0_reg_data;
+			cp0_epc <= wb_cp0_reg_data;
 		end else begin
-			cp0_status <= cp0_epc_i;
+			cp0_epc <= cp0_epc_i;
 		end
 	end
 	

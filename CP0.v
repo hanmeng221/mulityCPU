@@ -29,7 +29,7 @@ module CP0(
     input [4:0] raddr_i,
     input resetn,
     input clk,
-	input wire [31:0] excepttype__i,
+	input wire [31:0] excepttype_i,
 	input wire [31:0] current_inst_addr_i,
 	input wire  is_in_delayslot_i,
     output reg [31:0] data_o,
@@ -83,9 +83,9 @@ module CP0(
 				endcase
 			end
 			
-			case (excepttype__i)
+			case (excepttype_i)
 				32'h00000001: begin
-					if(is_in_delayslot_i = `InDelaySlot ) begin
+					if(is_in_delayslot_i == `InDelaySlot ) begin
 						epc_o <= current_inst_addr_i - 4;
 						cause_o[31] <= 1'b1;
 					end else begin

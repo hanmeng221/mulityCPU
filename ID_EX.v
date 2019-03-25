@@ -103,7 +103,7 @@ module ID_EX(
 			is_in_delayslot_o <= next_inst_in_delayslot_i;
 			ex_inst		<= id_inst;
 			ex_excepttype <= id_excepttype;
-			ex_current_inst_addr <= id_current_inst_addr;khj
+			ex_current_inst_addr <= id_current_inst_addr;
 		end
 	end
 	

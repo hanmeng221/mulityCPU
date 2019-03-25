@@ -127,6 +127,31 @@ module CPU(
 	wire [31:0] cp0_data_o;
 	wire [4:0] ex_cp0_reg_read_addr_o;
 
+	wire [31:0] id_excepttype_o;
+	wire [31:0] id_current_inst_addr_o;
+	
+	wire [31:0] id_ex_ex_excepttype;
+	wire [31:0] id_ex_ex_current_inst_addr;
+	
+	wire [31:0] exe_excepttype_o;
+	wire [31:0] exe_current_inst_addr_o;
+	wire exe_is_in_delayslot_o;
+	
+	wire [31:0] ex_mem_mem_excepttype;
+	wire [31:0] ex_mem_mem_current_inst_addr;
+	wire ex_mem_mem_is_in_delayslot;
+	
+	wire [31:0] mem_excepttype_o;
+	wire [31:0] mem_current_inst_addr_o;
+	wire mem_is_in_delayslot_o;
+	wire [31:0] mem_cp0_epc_o;
+	
+	wire [31:0] ctrl_new_pc;
+	wire ctrl_flush;
+	
+	wire [31:0] cp0_status_o;
+	wire [31:0] cp0_cause_o;
+	wire [31:0] cp0_epc_o;
 	
 	PC mypc(.clk(clk),.resetn(resetn),
 			.stall(stall),
@@ -143,8 +168,6 @@ module CPU(
 				.flush(ctrl_flush),
 				.id_pc(id_pc),.id_inst(id_inst));
 	
-	wire [31:0] id_excepttype_o;
-	wire [31:0] id_current_inst_addr_o;
 	
 	ID	myid(.pc_i(id_pc),.inst_i(id_inst),.reg1_data(reg1_o),.reg2_data(reg2_o),
 			.resetn(resetn),
@@ -166,8 +189,6 @@ module CPU(
 			.wreg(wb_wreg),.waddr(wb_wd),.wdata(wb_wdata),
 			.rdata1(reg1_o),.rdata2(reg2_o));
 			
-	wire [31:0] id_ex_ex_excepttype;
-	wire [31:0] id_ex_ex_current_inst_addr;
 	
 	ID_EX myid_ex(.id_aluop(id_aluop),.id_alusel(id_alusel),.id_reg1_i(id_reg1),.id_reg2_i(id_reg2),
 					.id_wd_i(id_wd),.id_wreg(id_wreg),
@@ -183,9 +204,6 @@ module CPU(
 					.ex_inst(ex_inst_i),
 					.ex_excepttype(id_ex_ex_excepttype),.ex_current_inst_addr(id_ex_ex_current_inst_addr));
 		
-	wire [31:0] exe_excepttype_o;
-	wire [31:0] exe_current_inst_addr_o;
-	wire exe_is_in_delayslot_o;
 	
 	EXE myexe(.aluop_i(ex_aluop),.alusel_i(ex_alusel),.reg1_i(ex_reg1),.reg2_i(ex_reg2),.wd_i(ex_wd_i),.wreg_i(ex_wreg_i),
 			.hi_i(hi_o),.lo_i(lo_o),
@@ -204,10 +222,6 @@ module CPU(
 			.excepttype_o(exe_excepttype_o),.current_inst_addr_o(exe_current_inst_addr_o),.is_in_delayslot_o(exe_is_in_delayslot_o));	
 	
 
-	wire [31:0] ex_mem_mem_excepttype;
-	wire [31:0] ex_mem_mem_current_inst_addr;
-	wire ex_mem_mem_is_in_delayslot;
-	
 	EX_MEM myex_mem(.ex_wdata(ex_wdata),.ex_wd(ex_wd_o),.ex_wreg(ex_wreg_o),
 					.ex_whilo(ex_whilo_o),.ex_hi(ex_hi_o),.ex_lo(ex_lo_o),
 					.ex_cp0_reg_we(ex_cp0_reg_we_o),.ex_cp0_reg_write_addr(ex_cp0_reg_write_addr_o),.ex_cp0_reg_data(ex_cp0_reg_data_o),
@@ -221,12 +235,6 @@ module CPU(
 					.mem_aluop(exe_mem_aluop_o),.mem_mem_addr(exe_mem_mem_addr_o),.mem_reg2(exe_mem_ex_reg2),
 					.mem_cp0_reg_we(ex_mem_mem_cp0_reg_we),.mem_cp0_reg_write_addr(ex_mem_mem_cp0_reg_write_addr),.mem_cp0_reg_data(ex_mem_mem_cp0_reg_data),
 					.mem_excepttype(ex_mem_mem_excepttype),.mem_current_inst_addr(ex_mem_mem_current_inst_addr),.mem_is_in_delayslot(ex_mem_mem_is_in_delayslot));
-	
-	
-	wire [31:0] mem_excepttype_o;
-	wire [31:0] mem_current_inst_addr_o;
-	wire mem_is_in_delayslot_o;
-	wire [31:0] mem_cp0_epc_o;
 	
 	
 	MEM mymem(.wdata_i(mem_wdata_i),.wd_i(mem_wd_i),.wreg_i(mem_wreg_i),
@@ -258,21 +266,15 @@ module CPU(
 				.resetn(resetn),.clk(clk),
 				.hi_o(hi_o),.lo_o(lo_o));
 			
-	wire [31:0] ctrl_new_pc;
-	wire ctrl_flush;
 	CTRL myctrl(.resetn(resetn),
 				.stallreq_from_id(id_stallreq),.stallreq_from_ex(ex_stallreq),
-				.cp0_epc_i(mem_cp0_epc_o),.excepttype__i(mem_excepttype_o),
+				.cp0_epc_i(mem_cp0_epc_o),.excepttype_i(mem_excepttype_o),
 				.stall(stall),
 				.new_pc(ctrl_new_pc),.flush(ctrl_flush));
 	
 	DATAMEM mydatamem(.addr(mem_mem_addr_o),.data(mem_mem_data),.we(mem_mem_we),
 					.clk(clk),
 					.data_o(mem_data_i));
-	
-	wire [31:0] cp0_status_o;
-	wire [31:0] cp0_cause_o;
-	wire [31:0] cp0_epc_o;
 	
 	CP0 mycp0( .we_i(mem_wb_wb_cp0_reg_we),.waddr_i(mem_wb_wb_cp0_reg_write_addr),.wdata_i(mem_wb_wb_cp0_reg_data),
 				.int_i(),.raddr_i(ex_cp0_reg_read_addr_o),
